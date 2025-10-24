@@ -9,10 +9,8 @@ import textwrap
 from datetime import datetime, timedelta
 import re
 
-load_dotenv()  # take environment variables from .env.
-
 # If TMDB API Read Access Token key is not hardcoded, then load from environment variables
-token = os.getenv("TMDBTOKEN")
+token = os.environ["TMDBTOKEN"]
 # Base URL for the API
 url = "https://api.themoviedb.org/3/"
 
