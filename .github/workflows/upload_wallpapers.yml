@@ -26,7 +26,7 @@ jobs:
 
       - name: Run TMDB Wallpaper Generation Script
         run: |
-          python -u TMDBlogo.py
+          python -u TMDB.py
         env:
           TMDB_BEARER_TOKEN: ${{ secrets.TMDB_BEARER_TOKEN }}
 
