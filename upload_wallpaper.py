@@ -40,7 +40,7 @@ for submission in subreddit.new(limit=None):
     post_age = current_time - datetime.utcfromtimestamp(submission.created_utc)
     
     # Skip if the post is not an image or doesn't match your tracking criteria
-    if post_age > time_limit and submission.title.startswith("Wallpaper:") and "PLEX" not in submission.title.upper():
+    if submission.title.startswith("Wallpaper:") and "PLEX" not in submission.title.upper():
         # Try to delete the post
         try:
             # Remove "Wallpaper: " prefix to get the original filename
