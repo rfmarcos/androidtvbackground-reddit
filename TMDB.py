@@ -18,8 +18,8 @@ headers = {
 truetype_url = 'https://github.com/googlefonts/roboto/raw/main/src/hinted/Roboto-Light.ttf'
 
 # Endpoint for trending shows
-trending_movies_url = f'{url}trending/movie/week?language=en-US'
-trending_tvshows_url = f'{url}trending/tv/week?language=en-US'
+trending_movies_url = f'{url}trending/movie/week?language=es-ES'
+trending_tvshows_url = f'{url}trending/tv/week?language=es-ES'
 
 # Fetching trending movies and TV shows
 def fetch_trending(url):
@@ -33,7 +33,7 @@ trending_tvshows = fetch_trending(trending_tvshows_url)
 # Fetching genres for movies and TV shows
 def fetch_genres(media_type):
     """Fetches genres for movies or TV shows"""
-    genres_url = f'{url}genre/{media_type}/list?language=en-US'
+    genres_url = f'{url}genre/{media_type}/list?language=es-ES'
     response = requests.get(genres_url, headers=headers)
     return {genre['id']: genre['name'] for genre in response.json().get('genres', [])}
 
@@ -43,7 +43,7 @@ tv_genres = fetch_genres("tv")
 # Fetching TV show and movie details
 def fetch_details(media_type, media_id):
     """Fetches details of a movie or TV show"""
-    details_url = f'{url}{media_type}/{media_id}?language=en-US'
+    details_url = f'{url}{media_type}/{media_id}?language=es-ES'
     response = requests.get(details_url, headers=headers)
     return response.json()
 
