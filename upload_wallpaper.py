@@ -26,7 +26,7 @@ reddit = praw.Reddit(
 subreddit = reddit.subreddit(os.getenv('SUBREDDIT'))
 
 # Directories where wallpapers are stored
-wallpapers_dirs = ["plex_backgrounds", "tmdb_backgrounds"]
+wallpapers_dirs = ["tmdb_backgrounds"]
 
 # Time limit for deleting old posts (2 weeks)
 time_limit = timedelta(weeks=2)
