@@ -26,7 +26,7 @@ reddit = praw.Reddit(
 subreddit = reddit.subreddit(os.getenv('SUBREDDIT'))
 
 # Directories where wallpapers are stored
-wallpapers_dirs = ["tmdb_backgrounds"]
+wallpapers_dirs = ["plex_backgrounds", "tmdb_backgrounds"]
 
 # Time limit for deleting old posts (2 weeks)
 time_limit = timedelta(weeks=2)
@@ -64,7 +64,6 @@ with open(metadata_file, "w") as f:
 # Upload new wallpapers
 print("[DEBUG] Starting upload of new wallpapers...")  # <-- log
 for wallpapers_dir in wallpapers_dirs:
-    print(f"[DEBUG] Found {len(os.listdir(wallpapers_dir))} files in {wallpapers_dir}")  # <-- log
     if os.path.exists(wallpapers_dir):
         for filename in os.listdir(wallpapers_dir):
             if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
