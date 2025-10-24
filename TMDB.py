@@ -85,6 +85,9 @@ discover_movies = discover_movies_response.json()
 discover_tvshows_response = requests.get(discover_tvshows_url, headers=headers)
 discover_tvshows = discover_tvshows_response.json()
 
+print("Trending movies: " + str(trending_movies))
+print("Trending tvshows: " + str(trending_tvshows))
+
 # Fetching genres for movies
 genres_url = f"{url}genre/movie/list?language={language}"
 genres_response = requests.get(genres_url, headers=headers)
@@ -399,11 +402,6 @@ def should_exclude_tvshow(
     return False
 
 
-def is_russian(text):
-    """Return True if text contains Cyrillic characters (Russian)."""
-    return bool(re.search(r"[а-яА-ЯёЁ]", text))
-
-
 # Process each movie
 
 movies = trending_movies.get("results", []) + discover_movies.get("results", [])
@@ -414,8 +412,6 @@ movies = sorted(movies, key=lambda m: m.get("vote_average", 0), reverse=True)
 movies = movies[:movies_max]
 for movie in movies:
     title = movie["title"]
-    if not is_russian(title):
-        continue
     if should_exclude_movie(movie):
         continue
 
@@ -470,8 +466,6 @@ tvshows = sorted(tvshows, key=lambda t: t.get("vote_average", 0), reverse=True)
 tvshows = tvshows[:tvshows_max]
 for tvshow in tvshows:
     title = truncate_overview(tvshow["name"], 38)
-    if not is_russian(title):
-        continue
     if should_exclude_tvshow(tvshow):
         continue
 
