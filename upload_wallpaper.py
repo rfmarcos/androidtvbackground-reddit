@@ -9,8 +9,10 @@ metadata_file = "uploaded_wallpapers.txt"
 if os.path.exists(metadata_file):
     with open(metadata_file, "r") as f:
         uploaded_images = set(f.read().splitlines())
+    print(f"[DEBUG] Loaded {len(uploaded_images)} previously uploaded images.")  # <-- log
 else:
     uploaded_images = set()
+    print("[DEBUG] No metadata file found. Starting fresh.")  # <-- log
 
 # Initialize the Reddit instance
 reddit = praw.Reddit(
@@ -31,7 +33,9 @@ time_limit = timedelta(weeks=2)
 current_time = datetime.utcnow()
 
 # Delete old posts
+print("[DEBUG] Checking old posts for deletion...")  # <-- log
 for submission in subreddit.new(limit=None):
+    print(f"[DEBUG] Deleting post: {submission.title} (Posted: {submission.created_utc})")  # <-- log
     # Calculate the age of the submission
     post_age = current_time - datetime.utcfromtimestamp(submission.created_utc)
     
@@ -58,7 +62,9 @@ with open(metadata_file, "w") as f:
         f.write(f"{img}\n")
 
 # Upload new wallpapers
+print("[DEBUG] Starting upload of new wallpapers...")  # <-- log
 for wallpapers_dir in wallpapers_dirs:
+    print(f"[DEBUG] Found {len(os.listdir(wallpapers_dir))} files in {wallpapers_dir}")  # <-- log
     if os.path.exists(wallpapers_dir):
         for filename in os.listdir(wallpapers_dir):
             if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
