@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 import re
 
 # If TMDB API Read Access Token key is not hardcoded, then load from environment variables
-token = os.environ["TMDBTOKEN"]
+token = os.environ["TMDB_BEARER_TOKEN"]
 # Base URL for the API
 url = "https://api.themoviedb.org/3/"
 
