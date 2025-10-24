@@ -10,7 +10,6 @@ import re
 
 # If TMDB API Read Access Token key is not hardcoded, then load from environment variables
 token = os.environ["TMDB_BEARER_TOKEN"]
-print(f"TMDB token from env: {token}")
 
 # Base URL for the API
 url = "https://api.themoviedb.org/3/"
@@ -34,7 +33,7 @@ max_air_date = (
     datetime.now() - timedelta(days=365)
 )  # specify the number of days since the movei release or the tv show last air date, shows before this date will be excluded
 
-min_rating = 6.0  # specify the minimum rating for movies and tv shows, shows below this rating will be excluded
+min_rating = 5.0  # specify the minimum rating for movies and tv shows, shows below this rating will be excluded
 
 # Language
 language = "es-ES"
@@ -59,8 +58,8 @@ if not os.path.exists(truetype_path):
     except Exception as e:
         print(f"An error occurred while downloading the Roboto-Light font: {e}")
 
-movies_max = 10  # specify the maximum number of movies to fetch
-tvshows_max = 10  # specify the maximum number of TV shows to fetch
+movies_max = 20  # specify the maximum number of movies to fetch
+tvshows_max = 20  # specify the maximum number of TV shows to fetch
 # Endpoint for trending shows
 trending_movies_url = f"{url}trending/movie/week?language={language}"
 trending_tvshows_url = f"{url}trending/tv/week?language={language}"
@@ -86,9 +85,6 @@ discover_movies = discover_movies_response.json()
 # Fetching discover TV shows
 discover_tvshows_response = requests.get(discover_tvshows_url, headers=headers)
 discover_tvshows = discover_tvshows_response.json()
-
-print("Trending movies: " + str(trending_movies))
-print("Trending tvshows: " + str(trending_tvshows))
 
 # Fetching genres for movies
 genres_url = f"{url}genre/movie/list?language={language}"
@@ -232,7 +228,7 @@ def process_image(
         # Paste images
         bckg.paste(image, (1175, 0))
         bckg.paste(overlay, (1175, 0), overlay)
-        bckg.paste(tmdblogo, (210, 730), tmdblogo)
+        bckg.paste(tmdblogo, (680, 890), tmdblogo)
 
         # Add title text with shadow
         draw = ImageDraw.Draw(bckg)
@@ -268,7 +264,7 @@ def process_image(
             additional_info = f"{duration}"
         else:
             genre_text = genre
-            additional_info = f"{seasons} {'Season' if seasons == 1 else 'Seasons'}"
+            additional_info = f"{seasons} {'Temporada' if seasons == 1 else 'Temporadas'}"
 
         rating_text = "TMDB: " + str(rating)
         year_text = truncate(str(year), 7)
@@ -440,7 +436,7 @@ for movie in movies:
 
     # Check if backdrop image is available
     backdrop_path = movie["backdrop_path"]
-    custom_text = ""  # "Now Trending on"
+    custom_text = "En tendencia en"  # "Now Trending on"
     if backdrop_path:
         # Construct image URL
         image_url = f"https://image.tmdb.org/t/p/original{backdrop_path}"
@@ -467,12 +463,11 @@ tvshows = sorted(tvshows, key=lambda t: t.get("vote_average", 0), reverse=True)
 # Limit to tvshows_max
 tvshows = tvshows[:tvshows_max]
 for tvshow in tvshows:
-    title = truncate_overview(tvshow["name"], 38)
     if should_exclude_tvshow(tvshow):
         continue
 
     # Extract TV show details
-    title = truncate_overview(tvshow["name"], 38)
+    title = truncate_overview(tvshow["name"], 58)
     overview = tvshow["overview"]
     year = tvshow["first_air_date"]
     rating = round(tvshow["vote_average"], 1)
@@ -486,7 +481,7 @@ for tvshow in tvshows:
 
     # Check if backdrop image is available
     backdrop_path = tvshow["backdrop_path"]
-    custom_text = ""  # "Now Trending on"
+    custom_text = "En tendencia en"  # "Now Trending on"
     if backdrop_path:
         # Construct image URL
         image_url = f"https://image.tmdb.org/t/p/original{backdrop_path}"
