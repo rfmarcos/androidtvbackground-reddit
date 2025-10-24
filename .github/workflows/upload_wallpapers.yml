@@ -26,15 +26,13 @@ jobs:
 
       - name: Run TMDB Wallpaper Generation Script
         run: |
-          ls -la tmdb_backgrounds || echo "tmdb_backgrounds not found"
-          python TMDBlogo.py
-          ls -la tmdb_backgrounds || echo "tmdb_backgrounds after script"
+          python -u TMDBlogo.py
         env:
           TMDB_BEARER_TOKEN: ${{ secrets.TMDB_BEARER_TOKEN }}
 
       - name: Upload Wallpapers to Subreddit
         run: |
-          python upload_wallpaper.py
+          python -u upload_wallpaper.py
         env:
           CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
           CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
