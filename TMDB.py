@@ -10,6 +10,8 @@ import re
 
 # If TMDB API Read Access Token key is not hardcoded, then load from environment variables
 token = os.environ["TMDB_BEARER_TOKEN"]
+print("Token: " + str(token))
+
 # Base URL for the API
 url = "https://api.themoviedb.org/3/"
 
