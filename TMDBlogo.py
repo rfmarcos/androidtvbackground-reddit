@@ -19,8 +19,8 @@ headers = {
 truetype_url = 'https://github.com/googlefonts/roboto/raw/main/src/hinted/Roboto-Light.ttf'
 
 # Endpoint for trending shows
-trending_movies_url = f'{url}trending/movie/week?language=en-US'
-trending_tvshows_url = f'{url}trending/tv/week?language=en-US'
+trending_movies_url = f'{url}trending/movie/week?language=es-ES'
+trending_tvshows_url = f'{url}trending/tv/week?language=es-ES'
 
 # Fetching trending movies
 trending_movies_response = requests.get(trending_movies_url, headers=headers)
@@ -31,26 +31,26 @@ trending_tvshows_response = requests.get(trending_tvshows_url, headers=headers)
 trending_tvshows = trending_tvshows_response.json()
 
 # Fetching genres for movies
-genres_url = f'{url}genre/movie/list?language=en-US'
+genres_url = f'{url}genre/movie/list?language=es-ES'
 genres_response = requests.get(genres_url, headers=headers)
 genres_data = genres_response.json()
 movie_genres = {genre['id']: genre['name'] for genre in genres_data.get('genres', [])}
 
 # Fetching genres for TV shows
-genres_url = f'{url}genre/tv/list?language=en-US'
+genres_url = f'{url}genre/tv/list?language=es-ES'
 genres_response = requests.get(genres_url, headers=headers)
 genres_data = genres_response.json()
 tv_genres = {genre['id']: genre['name'] for genre in genres_data.get('genres', [])}
 
 # Fetching TV show details
 def get_tv_show_details(tv_id):
-    tv_details_url = f'{url}tv/{tv_id}?language=en-US'
+    tv_details_url = f'{url}tv/{tv_id}?language=es-ES'
     tv_details_response = requests.get(tv_details_url, headers=headers)
     return tv_details_response.json()
 
 # Fetching movie details
 def get_movie_details(movie_id):
-    movie_details_url = f'{url}movie/{movie_id}?language=en-US'
+    movie_details_url = f'{url}movie/{movie_id}?language=es-ES'
     movie_details_response = requests.get(movie_details_url, headers=headers)
     return movie_details_response.json()
 
@@ -105,7 +105,7 @@ def clean_filename(filename):
     return cleaned_filename
 
 # Fetch movie or TV show logo in English
-def get_logo(media_type, media_id, language="en"):
+def get_logo(media_type, media_id, language="es"):
     logo_url = f"{url}{media_type}/{media_id}/images?language={language}"
     logo_response = requests.get(logo_url, headers=headers)
     logo_data = logo_response.json()
@@ -182,9 +182,9 @@ def process_image(image_url, title, is_movie, genre, year, rating, duration=None
 
         # Get logo image URL
         if is_movie:
-            logo_path = get_logo("movie", movie['id'], language="en")
+            logo_path = get_logo("movie", movie['id'], language="es")
         else:
-            logo_path = get_logo("tv", tvshow['id'], language="en")
+            logo_path = get_logo("tv", tvshow['id'], language="es")
 
         logo_drawn = False  # Flag to track if logo is drawn
 
