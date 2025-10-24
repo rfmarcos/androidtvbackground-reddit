@@ -256,11 +256,11 @@ def process_image(
         custom_position = (210, 870)
 
         # Wrap overview text
-        # wrapped_overview = "\n".join(textwrap.wrap(overview, width=70, max_lines=2, placeholder=" ..."))
+        wrapped_overview = "\n".join(textwrap.wrap(overview, width=70, max_lines=2, placeholder=" ..."))
 
         # Draw Overview for info
-        # draw.text((overview_position[0] + shadow_offset, overview_position[1] + shadow_offset), wrapped_overview, font=font_overview, fill=shadow_color)
-        # draw.text(overview_position, wrapped_overview, font=font_overview, fill=metadata_color)
+        draw.text((overview_position[0] + shadow_offset, overview_position[1] + shadow_offset), wrapped_overview, font=font_overview, fill=shadow_color)
+        draw.text(overview_position, wrapped_overview, font=font_overview, fill=metadata_color)
 
         # Determine genre text and additional info
         if is_movie:
@@ -434,7 +434,7 @@ for movie in movies:
     if duration:
         hours = duration // 60
         minutes = duration % 60
-        duration = f"{hours}ч {minutes}мин"
+        duration = f"{hours}h {minutes}min"
     else:
         duration = "N/A"
 
