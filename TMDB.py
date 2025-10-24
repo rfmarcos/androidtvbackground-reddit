@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 import requests
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
 from io import BytesIO
