@@ -7,6 +7,7 @@ from urllib.request import urlopen
 import textwrap
 
 # Base URL for the API
+print("[DEBUG] Starting TMDBlogo.py")
 url = "https://api.themoviedb.org/3/"
 
 # Set your TMDB API Read Access Token key here
@@ -56,10 +57,12 @@ def get_movie_details(movie_id):
 
 # Create a directory to save the backgrounds
 background_dir = "tmdb_backgrounds"
+print(f"[DEBUG] background_dir: {background_dir}")
 # Clear the contents of the folder
 if os.path.exists(background_dir):
     shutil.rmtree(background_dir)
 os.makedirs(background_dir, exist_ok=True)
+print(f"[DEBUG] Created folder: {background_dir}")
 
 #truncate overview
 def truncate_overview(overview, max_chars):
