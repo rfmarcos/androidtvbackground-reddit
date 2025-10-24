@@ -24,8 +24,15 @@ trending_tvshows_url = f'{url}trending/tv/week?language=es-ES'
 # Fetching trending movies and TV shows
 def fetch_trending(url):
     """Fetches trending movies or TV shows"""
-    response = requests.get(url, headers=headers)
-    return response.json().get('results', [])
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        print(f"[DEBUG] Fetching {url} - Status: {response.status_code}")  # <-- log
+        data = response.json()
+        print(f"[DEBUG] Number of items fetched: {len(data.get('results', []))}")  # <-- log
+        return data.get('results', [])
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch trending from {url}: {e}")  # <-- log
+        return []
 
 trending_movies = fetch_trending(trending_movies_url)
 trending_tvshows = fetch_trending(trending_tvshows_url)
@@ -41,11 +48,18 @@ movie_genres = fetch_genres("movie")
 tv_genres = fetch_genres("tv")
 
 # Fetching TV show and movie details
-def fetch_details(media_type, media_id):
-    """Fetches details of a movie or TV show"""
-    details_url = f'{url}{media_type}/{media_id}?language=es-ES'
-    response = requests.get(details_url, headers=headers)
-    return response.json()
+def fetch_genres(media_type):
+    try:
+        genres_url = f'{url}genre/{media_type}/list?language=es-ES'
+        response = requests.get(genres_url, headers=headers, timeout=10)
+        print(f"[DEBUG] Fetching genres {genres_url} - Status: {response.status_code}")  # <-- log
+        data = response.json()
+        genres_dict = {genre['id']: genre['name'] for genre in data.get('genres', [])}
+        print(f"[DEBUG] Genres fetched for {media_type}: {genres_dict}")  # <-- log
+        return genres_dict
+    except Exception as e:
+        print(f"[ERROR] Failed to fetch genres for {media_type}: {e}")  # <-- log
+        return {}
 
 # Create a directory to save the backgrounds
 background_dir = "tmdb_backgrounds"
@@ -81,7 +95,16 @@ def process_image(image_url, title, is_movie, genre, year, rating, duration=None
         duration (str, optional): Duration of the movie. Defaults to None.
         seasons (int, optional): Number of seasons of the TV show. Defaults to None.
     """
-    response = requests.get(image_url, timeout=10)
+    print(f"[DEBUG] Processing image for: {title}")  # <-- log
+    print(f"[DEBUG] Image URL: {image_url}")  # <-- log
+    print(f"[DEBUG] Genre: {genre}, Year: {year}, Rating: {rating}, Duration/Seasons: {duration if is_movie else seasons}")  # <-- log
+
+    try:
+        response = requests.get(image_url, timeout=10)
+        response.raise_for_status()
+    except Exception as e:
+        print(f"[ERROR] Failed to download image {title}: {e}")  # <-- log
+        return
     if response.status_code == 200:
         # Open the downloaded image
         image = Image.open(BytesIO(response.content))
