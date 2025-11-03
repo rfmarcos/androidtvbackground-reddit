@@ -212,9 +212,6 @@ def get_logo_fallback(media_type, media, language=language_short):
         details_response = requests.get(details_url, headers=headers)
         details_data = details_response.json()
 
-        print(f"Logo last fallback url: {details_url}")
-        print(f"Logo last fallback response: {details_data}")
-
         if media_type=="movie":
             english_name = details_data["title"]
         else:
@@ -238,7 +235,7 @@ def get_logo(media_type, media_id, language=language_short):
     if logo_response.status_code == 200:
         logos = logo_response.json().get("logos", [])
         for logo in logos:
-            if logo["iso_639_1"] == language_short and logo["file_path"].endswith(
+            if logo["iso_639_1"] == language and logo["file_path"].endswith(
                 ".png"
             ):
                 return logo["file_path"]
