@@ -202,7 +202,7 @@ def get_logo_fallback(media_type, media, language=language_short):
         original = media["original_name"]
 
     if similarity(name, original) > 0.9:
-        logo = get_multilogo(media_type, media["id"], language=language_short, original_language=media["original_language"])
+        logo = get_multilogo(media_type, media["id"], original_language=media["original_language"], language=language_short)
     else:
         logo = get_logo(media_type, media["id"], language=language_short)
 
