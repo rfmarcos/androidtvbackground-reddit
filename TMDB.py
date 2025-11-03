@@ -33,8 +33,6 @@ max_air_date = (
     datetime.now() - timedelta(days=365)
 )  # specify the number of days since the movei release or the tv show last air date, shows before this date will be excluded
 
-min_rating = 5.0  # specify the minimum rating for movies and tv shows, shows below this rating will be excluded
-
 # Language
 language = "es-ES"
 language_short = "es"
@@ -418,8 +416,7 @@ for movie in movies:
     overview = movie["overview"]
     year = movie["release_date"]
     rating = round(movie["vote_average"], 1)
-    if rating < min_rating:
-        continue
+
     genre = ", ".join([movie_genres[genre_id] for genre_id in movie["genre_ids"]])
     print(f"Processing movie: {title} {rating}")
     # Fetch additional movie details
@@ -471,8 +468,7 @@ for tvshow in tvshows:
     overview = tvshow["overview"]
     year = tvshow["first_air_date"]
     rating = round(tvshow["vote_average"], 1)
-    if rating < min_rating:
-        continue
+    
     genre = ", ".join([tv_genres[genre_id] for genre_id in tvshow["genre_ids"]])
     print(f"Processing TV show: {title} {rating}")
     # Fetch additional TV show details
