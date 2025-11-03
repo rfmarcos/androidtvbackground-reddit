@@ -1,4 +1,4 @@
-name: Debug TMDB Fetch (Dev)
+name: Generate Wallpapers (Dev)
 
 on:
   push:
@@ -6,7 +6,7 @@ on:
       - dev
 
 jobs:
-  debug-tmdb:
+  generate-wallpapers:
     runs-on: ubuntu-latest
 
     steps:
@@ -32,11 +32,15 @@ jobs:
         run: |
           echo "Listing contents of tmdb_backgrounds/"
           ls -la tmdb_backgrounds || echo "No images generated"
-
+       
+      - name: Set date variable
+        id: date
+        run: echo "DATE=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_ENV
+        
       - name: Upload images as artifact
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: tmdb-debug-images
+          name: tmdb-wallpapers-${{ env.DATE }}
           path: tmdb_backgrounds/
           if-no-files-found: warn

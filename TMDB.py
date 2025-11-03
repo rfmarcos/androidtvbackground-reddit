@@ -7,6 +7,7 @@ from urllib.request import urlopen
 import textwrap
 from datetime import datetime, timedelta
 import re
+import difflib
 
 # If TMDB API Read Access Token key is not hardcoded, then load from environment variables
 token = os.environ["TMDB_BEARER_TOKEN"]
@@ -32,8 +33,6 @@ excluded_keywords = ["adult"]  # like ['adult']
 max_air_date = (
     datetime.now() - timedelta(days=365)
 )  # specify the number of days since the movei release or the tv show last air date, shows before this date will be excluded
-
-min_rating = 5.0  # specify the minimum rating for movies and tv shows, shows below this rating will be excluded
 
 # Language
 language = "es-ES"
@@ -194,6 +193,41 @@ def clean_filename(filename):
 
 
 # Fetch movie or TV show logo
+def get_logo_fallback(media_type, media, language=language_short):
+    if media_type=="movie":
+        name = media["title"]
+        original = media["original_title"]
+    else:
+        name  = media["name"]
+        original = media["original_name"]
+
+    if similarity(name, original) > 0.9:
+        logo = get_multilogo(media_type, media["id"], original_language=media["original_language"], language=language_short)
+    else:
+        logo = get_logo(media_type, media["id"], language=language_short)
+
+    if logo is None and media["original_language"] != "en":
+        print("Logo last fallback")
+        details_url = f"{url}{media_type}/{media['id']}?language=en-US"
+        details_response = requests.get(details_url, headers=headers)
+        details_data = details_response.json()
+
+        if media_type=="movie":
+            english_name = details_data["title"]
+        else:
+            english_name = details_data["name"]
+
+        if similarity(name, english_name) > 0.9:
+            print("Logo last fallback: similarity matched")
+            logo = get_logo(media_type, media["id"], "en")
+        else:
+            print("Logo last fallback: similarity failed")
+
+    if logo is None:
+        print("Logo no found")
+
+    return logo
+
 def get_logo(media_type, media_id, language=language_short):
     logo_url = f"{url}{media_type}/{media_id}/images?language={language}"
     logo_response = requests.get(logo_url, headers=headers)
@@ -201,12 +235,32 @@ def get_logo(media_type, media_id, language=language_short):
     if logo_response.status_code == 200:
         logos = logo_response.json().get("logos", [])
         for logo in logos:
-            if logo["iso_639_1"] == language_short and logo["file_path"].endswith(
+            if logo["iso_639_1"] == language and logo["file_path"].endswith(
                 ".png"
             ):
                 return logo["file_path"]
     return None
 
+def get_multilogo(media_type, media_id, original_language, language=language_short):
+    logo_url = f"{url}{media_type}/{media_id}/images?include_image_language={language},{original_language}"
+    logo_response = requests.get(logo_url, headers=headers)
+    
+    logos = logo_response.json().get("logos", [])
+    valid_logos = [logo for logo in logos if logo["file_path"].endswith(".png")]
+                
+    for valid_logo in valid_logos:
+        if valid_logo["iso_639_1"] == language_short:
+            return valid_logo["file_path"]
+
+    for valid_logo in valid_logos:
+        if valid_logo["iso_639_1"] == original_language:
+            print("Logo second fallback")
+            return valid_logo["file_path"]
+    
+    return None
+
+def similarity(a, b):
+    return difflib.SequenceMatcher(None, a.lower(), b.lower()).ratio()
 
 def process_image(
     image_url, title, is_movie, genre, year, rating, duration=None, seasons=None
@@ -281,9 +335,9 @@ def process_image(
 
         # Get logo image URL
         if is_movie:
-            logo_path = get_logo("movie", movie["id"], language=language_short)
+            logo_path = get_logo_fallback("movie", movie, language=language_short)
         else:
-            logo_path = get_logo("tv", tvshow["id"], language=language_short)
+            logo_path = get_logo_fallback("tv", tvshow, language=language_short)
 
         logo_drawn = False  # Flag to track if logo is drawn
 
@@ -418,8 +472,7 @@ for movie in movies:
     overview = movie["overview"]
     year = movie["release_date"]
     rating = round(movie["vote_average"], 1)
-    if rating < min_rating:
-        continue
+
     genre = ", ".join([movie_genres[genre_id] for genre_id in movie["genre_ids"]])
     print(f"Processing movie: {title} {rating}")
     # Fetch additional movie details
@@ -471,8 +524,7 @@ for tvshow in tvshows:
     overview = tvshow["overview"]
     year = tvshow["first_air_date"]
     rating = round(tvshow["vote_average"], 1)
-    if rating < min_rating:
-        continue
+    
     genre = ", ".join([tv_genres[genre_id] for genre_id in tvshow["genre_ids"]])
     print(f"Processing TV show: {title} {rating}")
     # Fetch additional TV show details
