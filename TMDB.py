@@ -221,6 +221,7 @@ def get_logo_fallback(media_type, media, language=language_short):
             english_name = details_data["name"]
 
         if similarity(name, english_name) > 0.9:
+            print("Logo last fallback: similarity matched")
             logo = get_logo(media_type, media["id"], "en")
         else:
             print("Logo last fallback: similarity failed")
