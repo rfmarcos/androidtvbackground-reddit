@@ -1,0 +1,42 @@
+name: Debug TMDB Fetch (Dev)
+
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  debug-tmdb:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.8
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+
+      - name: Run TMDB fetch
+        env:
+          TMDB_BEARER_TOKEN: ${{ secrets.TMDB_BEARER_TOKEN }}
+        run: |
+          python -u TMDB.py
+
+      - name: List generated images
+        run: |
+          echo "Listing contents of tmdb_backgrounds/"
+          ls -la tmdb_backgrounds || echo "No images generated"
+
+      - name: Upload images as artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tmdb-debug-images
+          path: tmdb_backgrounds/
+          if-no-files-found: warn
