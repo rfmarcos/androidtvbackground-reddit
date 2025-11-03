@@ -234,7 +234,7 @@ def get_logo(media_type, media_id, language=language_short):
                 return logo["file_path"]
     return None
 
-def get_multilogo(media_type, media_id, language=language_short, original_language):
+def get_multilogo(media_type, media_id, original_language, language=language_short):
     logo_url = f"{url}{media_type}/{media_id}/images?include_image_language={language},{original_language}"
     logo_response = requests.get(logo_url, headers=headers)
     
