@@ -212,13 +212,18 @@ def get_logo_fallback(media_type, media, language=language_short):
         details_response = requests.get(details_url, headers=headers)
         details_data = details_response.json()
 
+        print(f"Logo last fallback url: {details_url}")
+        print(f"Logo last fallback response: {details_data}")
+
         if media_type=="movie":
             english_name = details_data["title"]
         else:
-            english_name  = details_data["name"]
+            english_name = details_data["name"]
 
         if similarity(name, english_name) > 0.9:
             logo = get_logo(media_type, media["id"], "en")
+        else:
+            print("Logo last fallback: similarity failed")
 
     if logo is None:
         print("Logo no found")
