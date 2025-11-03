@@ -207,6 +207,7 @@ def get_logo_fallback(media_type, media, language=language_short):
         logo = get_logo(media_type, media["id"], language=language_short)
 
     if logo is None and media["original_language"] != "en":
+        print("Logo last fallback")
         details_url = f"{url}{media_type}/{media['id']}?language=en-US"
         details_response = requests.get(details_url, headers=headers)
         details_data = details_response.json()
@@ -218,6 +219,9 @@ def get_logo_fallback(media_type, media, language=language_short):
 
         if similarity(name, english_name) > 0.9:
             logo = get_logo(media_type, media["id"], "en")
+
+    if logo is None
+        print("Logo no found")
 
     return logo
 
@@ -247,6 +251,7 @@ def get_multilogo(media_type, media_id, original_language, language=language_sho
 
     for valid_logo in valid_logos:
         if valid_logo["iso_639_1"] == original_language:
+            print("Logo second fallback")
             return valid_logo["file_path"]
     
     return None
