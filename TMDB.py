@@ -220,7 +220,7 @@ def get_logo_fallback(media_type, media, language=language_short):
         if similarity(name, english_name) > 0.9:
             logo = get_logo(media_type, media["id"], "en")
 
-    if logo is None
+    if logo is None:
         print("Logo no found")
 
     return logo
