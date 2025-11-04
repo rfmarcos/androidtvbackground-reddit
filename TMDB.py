@@ -537,6 +537,8 @@ for tvshow in tvshows:
     seasons = tv_details.get("number_of_seasons", 0)
 
     # Get network logo URL or fallback
+    # Since we only have couple of allowed_networks, might be better to replace with own logos to unify colours and sizes
+    network_image_url = None
     networks = tv_details.get("networks", [])
     for network in networks:
         name = network.get("name")
