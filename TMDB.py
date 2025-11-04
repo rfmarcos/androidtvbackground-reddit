@@ -1,12 +1,12 @@
 import requests
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
 from io import BytesIO
+import io
 import os
 import shutil
 from urllib.request import urlopen
 import textwrap
 from datetime import datetime, timedelta
-import re
 import difflib
 
 # If TMDB API Read Access Token key is not hardcoded, then load from environment variables
@@ -32,11 +32,12 @@ excluded_keywords = ["adult"]  # like ['adult']
 # Filter movies by release date and tv shows by last air date
 max_air_date = (
     datetime.now() - timedelta(days=365)
-)  # specify the number of days since the movei release or the tv show last air date, shows before this date will be excluded
+)  # specify the number of days since the movie release or the tv show last air date, shows before this date will be excluded
 
 # Language
 language = "es-ES"
 language_short = "es"
+now_tendring_text = "En tendencia en"
 
 # Save font locally
 truetype_url = (
@@ -207,7 +208,6 @@ def get_logo_fallback(media_type, media, language=language_short):
         logo = get_logo(media_type, media["id"], language=language_short)
 
     if logo is None and media["original_language"] != "en":
-        print("Logo last fallback")
         details_url = f"{url}{media_type}/{media['id']}?language=en-US"
         details_response = requests.get(details_url, headers=headers)
         details_data = details_response.json()
@@ -218,13 +218,7 @@ def get_logo_fallback(media_type, media, language=language_short):
             english_name = details_data["name"]
 
         if similarity(name, english_name) > 0.9:
-            print("Logo last fallback: similarity matched")
             logo = get_logo(media_type, media["id"], "en")
-        else:
-            print("Logo last fallback: similarity failed")
-
-    if logo is None:
-        print("Logo no found")
 
     return logo
 
@@ -254,7 +248,6 @@ def get_multilogo(media_type, media_id, original_language, language=language_sho
 
     for valid_logo in valid_logos:
         if valid_logo["iso_639_1"] == original_language:
-            print("Logo second fallback")
             return valid_logo["file_path"]
     
     return None
@@ -277,12 +270,21 @@ def process_image(
         # Open overlay images
         bckg = Image.open(os.path.join(os.path.dirname(__file__), "bckg.png"))
         overlay = Image.open(os.path.join(os.path.dirname(__file__), "overlay.png"))
-        tmdblogo = Image.open(os.path.join(os.path.dirname(__file__), "tmdblogo.png"))
+
+        try:
+            if network_image_url and network_image_url.startswith("http"):
+                response = requests.get(network_image_url, timeout=10)
+                response.raise_for_status()
+                networklogo = resize_image(Image.open(io.BytesIO(response.content)), 41)
+            else:
+                networklogo = Image.open(os.path.join(os.path.dirname(__file__), "tmdblogo.png"))
+        except Exception:
+            networklogo = Image.open(os.path.join(os.path.dirname(__file__), "tmdblogo.png"))
 
         # Paste images
         bckg.paste(image, (1175, 0))
         bckg.paste(overlay, (1175, 0), overlay)
-        bckg.paste(tmdblogo, (680, 890), tmdblogo)
+        bckg.paste(networklogo, (680, 890), networklogo)
 
         # Add title text with shadow
         draw = ImageDraw.Draw(bckg)
@@ -374,11 +376,11 @@ def process_image(
         # Draw custom text
         draw.text(
             (custom_position[0] + shadow_offset, custom_position[1] + shadow_offset),
-            custom_text,
+            now_tendring_text,
             font=font_custom,
             fill=shadow_color,
         )
-        draw.text(custom_position, custom_text, font=font_custom, fill=metadata_color)
+        draw.text(custom_position, now_tendring_text, font=font_custom, fill=metadata_color)
 
         # Save the resized image
         filename = os.path.join(background_dir, f"{clean_filename(title)}.jpg")
@@ -489,7 +491,6 @@ for movie in movies:
 
     # Check if backdrop image is available
     backdrop_path = movie["backdrop_path"]
-    custom_text = "En tendencia en"  # "Now Trending on"
     if backdrop_path:
         # Construct image URL
         image_url = f"https://image.tmdb.org/t/p/original{backdrop_path}"
@@ -531,9 +532,14 @@ for tvshow in tvshows:
     tv_details = get_tv_show_details(tvshow["id"])
     seasons = tv_details.get("number_of_seasons", 0)
 
+    # Get network logo URL or fallback
+    networks = tvshow.get("networks", [])
+    if networks and networks[0].get("logo_path"):
+        logo_path = networks[0]["logo_path"]
+        network_image_url = f"https://image.tmdb.org/t/p/original{logo_path}"
+
     # Check if backdrop image is available
     backdrop_path = tvshow["backdrop_path"]
-    custom_text = "En tendencia en"  # "Now Trending on"
     if backdrop_path:
         # Construct image URL
         image_url = f"https://image.tmdb.org/t/p/original{backdrop_path}"
