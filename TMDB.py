@@ -533,15 +533,10 @@ for tvshow in tvshows:
     seasons = tv_details.get("number_of_seasons", 0)
 
     # Get network logo URL or fallback
-    print(f"TVshow: {tvshow}")
-    networks = tvshow.get("networks", [])
-    print(f"Networks: {networks}")
-
+    networks = tv_details.get("networks", [])
     if networks and networks[0].get("logo_path"):
         logo_path = networks[0]["logo_path"]
         network_image_url = f"https://image.tmdb.org/t/p/original{logo_path}"
-        print(f"Network image url: {network_image_url}")
-
 
     # Check if backdrop image is available
     backdrop_path = tvshow["backdrop_path"]
