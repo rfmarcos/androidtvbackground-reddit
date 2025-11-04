@@ -34,6 +34,9 @@ max_air_date = (
     datetime.now() - timedelta(days=365)
 )  # specify the number of days since the movie release or the tv show last air date, shows before this date will be excluded
 
+# Allowed networks to show as image instead of tmdb (same name as in tmdb api)
+allowed_networks = {"Netflix", "HBO", "Prime Video", "Disney+"}
+
 # Language
 language = "es-ES"
 language_short = "es"
@@ -276,6 +279,7 @@ def process_image(
                 response = requests.get(network_image_url, timeout=10)
                 response.raise_for_status()
                 networklogo = resize_image(Image.open(io.BytesIO(response.content)), 41)
+                networklogo = networklogo.convert("RGBA")
             else:
                 networklogo = Image.open(os.path.join(os.path.dirname(__file__), "tmdblogo.png"))
         except Exception:
@@ -534,9 +538,12 @@ for tvshow in tvshows:
 
     # Get network logo URL or fallback
     networks = tv_details.get("networks", [])
-    if networks and networks[0].get("logo_path"):
-        logo_path = networks[0]["logo_path"]
-        network_image_url = f"https://image.tmdb.org/t/p/original{logo_path}"
+    for network in networks:
+        name = network.get("name")
+        logo_path = network.get("logo_path")
+        if name in allowed_networks and logo_path:
+            network_image_url = f"https://image.tmdb.org/t/p/original{logo_path}"
+            break
 
     # Check if backdrop image is available
     backdrop_path = tvshow["backdrop_path"]
