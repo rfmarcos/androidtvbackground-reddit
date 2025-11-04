@@ -538,6 +538,8 @@ for tvshow in tvshows:
         logo_path = networks[0]["logo_path"]
         network_image_url = f"https://image.tmdb.org/t/p/original{logo_path}"
 
+    print(f"Network image url: {network_image_url}")
+
     # Check if backdrop image is available
     backdrop_path = tvshow["backdrop_path"]
     if backdrop_path:
