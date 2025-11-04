@@ -533,6 +533,7 @@ for tvshow in tvshows:
     seasons = tv_details.get("number_of_seasons", 0)
 
     # Get network logo URL or fallback
+    print(f"TVshow: {tvshow}")
     networks = tvshow.get("networks", [])
     print(f"Networks: {networks}")
 
