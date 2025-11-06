@@ -12,7 +12,12 @@ jobs:
       CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
       CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
       REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
-      SUBREDDIT: ${{ secrets.REDDIT_SUBREDDIT }}
+      SUBREDDIT: AndroidTVWallpapersES
+      LANGUAGE: es-ES
+      LANGUAGE_SHORT: es
+      NOW_TRENDING_TEXT: En tendencia en
+      SEASON_TEXT: Temporada
+      SEASONS_TEXT: Temporadas
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
