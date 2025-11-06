@@ -40,9 +40,12 @@ for wallpapers_dir in wallpapers_dirs:
         for filename in os.listdir(wallpapers_dir):
             if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
                 file_path = os.path.join(wallpapers_dir, filename)
+                title = os.path.splitext(filename)[0]
+                title = title.replace('_', ' ')
+                title = f"Wallpaper: {title}"
                 print(f"Uploading {filename} to subreddit...")
                 try:
-                    subreddit.submit_image(title=f"Wallpaper: {filename}", image_path=file_path)
-                    print(f"Successfully uploaded {filename}.")
+                    subreddit.submit_image(title=title, image_path=file_path)
+                    print(f"Successfully uploaded {title}.")
                 except Exception as e:
                     print(f"Failed to upload {filename}: {e}")
