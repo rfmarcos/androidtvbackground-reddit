@@ -14,18 +14,17 @@ jobs:
       CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
       REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
       SUBREDDIT: ${{ secrets.REDDIT_SUBREDDIT }}
-    container:
-      image: ghcr.io/${{ github.repository }}:latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          python-version: 3.12
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
       - name: Run TMDB script
         run: python -u TMDB.py
