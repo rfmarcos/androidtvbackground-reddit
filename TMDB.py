@@ -145,8 +145,10 @@ def get_tv_keywords(tv_id):
 
 
 # Create a directory to save the backgrounds and clear its contents if it exists
+print("Check tmdb_backgrounds dir")
 background_dir = "tmdb_backgrounds"
 if os.path.exists(background_dir):
+    print("tmdb_backgrounds dir exists")
     for file in os.listdir(background_dir):
         file_path = os.path.join(background_dir, file)
         try:
@@ -467,7 +469,7 @@ def should_exclude_tvshow(
 
 
 # Process each movie
-
+print("Call for trending movies")
 movies = trending_movies.get("results", []) + discover_movies.get("results", [])
 # Sort movies by rating (descending)
 movies = sorted(movies, key=lambda m: m.get("vote_average", 0), reverse=True)
