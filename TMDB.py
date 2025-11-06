@@ -144,7 +144,15 @@ def get_tv_keywords(tv_id):
 # Create a directory to save the backgrounds and clear its contents if it exists
 background_dir = "tmdb_backgrounds"
 if os.path.exists(background_dir):
-    shutil.rmtree(background_dir)
+    for file in os.listdir(background_dir):
+        file_path = os.path.join(background_dir, file)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+        except Exception as e:
+            print(f"[WARN] Failed to delete {file_path}: {e}")
 os.makedirs(background_dir, exist_ok=True)
 
 
