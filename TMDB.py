@@ -10,37 +10,37 @@ from datetime import datetime, timedelta
 import difflib
 
 # If TMDB API Read Access Token key is not hardcoded, then load from environment variables
-token = os.environ["TMDB_BEARER_TOKEN"]
+TMDB_TOKEN = os.environ["TMDB_BEARER_TOKEN"]
 
 # Base URL for the API
-url = "https://api.themoviedb.org/3/"
+TMDB_URL = "https://api.themoviedb.org/3/"
 
 # Set your TMDB API Read Access Token key here
-headers = {"accept": "application/json", "Authorization": f"Bearer {token}"}
+TMDB_HEADERS = {"accept": "application/json", "Authorization": f"Bearer {TMDB_TOKEN}"}
 
 # TV Exclusion list - this filter will exclude Tv shows from chosen countries that have a specific genre
-tv_excluded_countries = []  # based on ISO 3166-1 alpha-2 codes, enter lowercase like ['cn','kr','jp','fr','us']
-tv_excluded_genres = []  # like ['Animation']
+TV_EXCLUDED_COUNTRIES = []  # based on ISO 3166-1 alpha-2 codes, enter lowercase like ['cn','kr','jp','fr','us']
+TV_EXCLUDED_GENRES = []  # like ['Animation']
 
 # Movie Exclusion list - this filter will exclude movies from chosen countries that have a specific genre
-movie_excluded_countries = []  # based on ISO 3166-1 alpha-2 codes, enter lowercase like ['cn','kr','jp','fr','us']
-movie_excluded_genres = []  # like ['Animation']
+MOVIE_EXCLUDED_COUNTRIES = []  # based on ISO 3166-1 alpha-2 codes, enter lowercase like ['cn','kr','jp','fr','us']
+MOVIE_EXCLUDED_GENRES = []  # like ['Animation']
 
 # Keyword exclusion list - this filter will exclude movies or tv shows that contain a specific keyword in their TMDB profile
-excluded_keywords = ["adult"]  # like ['adult']
+EXCLUDED_KEYWORDS = ["adult"]  # like ['adult']
 
 # Filter movies by release date and tv shows by last air date
-max_air_date = (
+MAX_AIR_DATE = (
     datetime.now() - timedelta(days=365)
 )  # specify the number of days since the movie release or the tv show last air date, shows before this date will be excluded
 
 # Allowed networks to show as image instead of tmdb (same name as in tmdb api)
-allowed_networks = {"Netflix", "HBO", "Prime Video", "Disney+"}
+ALLOWED_NETWORKS = {"Netflix", "HBO", "Prime Video", "Disney+"}
 
 # Language
-language = "es-ES"
-language_short = "es"
-now_tendring_text = "En tendencia en"
+LANGUAGE = "es-ES"
+LANGUAGE_SHORT = "es"
+NOW_TRENDING_TEXT = "En tendencia en"
 
 # Save font locally
 truetype_url = (
@@ -64,62 +64,62 @@ if not os.path.exists(truetype_path):
 movies_max = 20  # specify the maximum number of movies to fetch
 tvshows_max = 20  # specify the maximum number of TV shows to fetch
 # Endpoint for trending shows
-trending_movies_url = f"{url}trending/movie/week?language={language}"
-trending_tvshows_url = f"{url}trending/tv/week?language={language}"
+trending_movies_url = f"{TMDB_URL}trending/movie/week?language={LANGUAGE}"
+trending_tvshows_url = f"{TMDB_URL}trending/tv/week?language={LANGUAGE}"
 
 # Endpoint for discover shows
 start_date = (datetime.now() - timedelta(days=365)).strftime("%Y-%m-%d")
 end_date = datetime.now().strftime("%Y-%m-%d")
-discover_movies_url = f"{url}discover/movie?sort_by=popularity.desc&language={language}&include_adult=false&page=1&with_release_type=4|5|6&include_video=false&vote_average.gte=1&vote_count.gte=50&with_runtime.gte=15&without_genres=99&release_date.gte={start_date}&release_date.lte={end_date}"
-discover_tvshows_url = f"{url}discover/tv?sort_by=popularity.desc&language={language}&include_adult=false&page=1&vote_average.gte=1&vote_count.gte=50&with_runtime.gte=15&without_genres=99|16&first_air_date.gte={start_date}&first_air_date.lte={end_date}"
+discover_movies_url = f"{TMDB_URL}discover/movie?sort_by=popularity.desc&language={LANGUAGE}&include_adult=false&page=1&with_release_type=4|5|6&include_video=false&vote_average.gte=1&vote_count.gte=50&with_runtime.gte=15&without_genres=99&release_date.gte={start_date}&release_date.lte={end_date}"
+discover_tvshows_url = f"{TMDB_URL}discover/tv?sort_by=popularity.desc&language={LANGUAGE}&include_adult=false&page=1&vote_average.gte=1&vote_count.gte=50&with_runtime.gte=15&without_genres=99|16&first_air_date.gte={start_date}&first_air_date.lte={end_date}"
 
 # Fetching trending movies
-trending_movies_response = requests.get(trending_movies_url, headers=headers)
+trending_movies_response = requests.get(trending_movies_url, headers=TMDB_HEADERS)
 trending_movies = trending_movies_response.json()
 
 # Fetching trending TV shows
-trending_tvshows_response = requests.get(trending_tvshows_url, headers=headers)
+trending_tvshows_response = requests.get(trending_tvshows_url, headers=TMDB_HEADERS)
 trending_tvshows = trending_tvshows_response.json()
 
 # Fetching discover movies
-discover_movies_response = requests.get(discover_movies_url, headers=headers)
+discover_movies_response = requests.get(discover_movies_url, headers=TMDB_HEADERS)
 discover_movies = discover_movies_response.json()
 
 # Fetching discover TV shows
-discover_tvshows_response = requests.get(discover_tvshows_url, headers=headers)
+discover_tvshows_response = requests.get(discover_tvshows_url, headers=TMDB_HEADERS)
 discover_tvshows = discover_tvshows_response.json()
 
 # Fetching genres for movies
-genres_url = f"{url}genre/movie/list?language={language}"
-genres_response = requests.get(genres_url, headers=headers)
+genres_url = f"{TMDB_URL}genre/movie/list?language={LANGUAGE}"
+genres_response = requests.get(genres_url, headers=TMDB_HEADERS)
 genres_data = genres_response.json()
 movie_genres = {genre["id"]: genre["name"] for genre in genres_data.get("genres", [])}
 
 # Fetching genres for TV shows
-genres_url = f"{url}genre/tv/list?language={language}"
-genres_response = requests.get(genres_url, headers=headers)
+genres_url = f"{TMDB_URL}genre/tv/list?language={LANGUAGE}"
+genres_response = requests.get(genres_url, headers=TMDB_HEADERS)
 genres_data = genres_response.json()
 tv_genres = {genre["id"]: genre["name"] for genre in genres_data.get("genres", [])}
 
 
 # Fetching TV show details
 def get_tv_show_details(tv_id):
-    tv_details_url = f"{url}tv/{tv_id}?language={language}"
-    tv_details_response = requests.get(tv_details_url, headers=headers)
+    tv_details_url = f"{TMDB_URL}tv/{tv_id}?language={LANGUAGE}"
+    tv_details_response = requests.get(tv_details_url, headers=TMDB_HEADERS)
     return tv_details_response.json()
 
 
 # Fetching movie details
 def get_movie_details(movie_id):
-    movie_details_url = f"{url}movie/{movie_id}?language={language}"
-    movie_details_response = requests.get(movie_details_url, headers=headers)
+    movie_details_url = f"{url}movie/{movie_id}?language={LANGUAGE}"
+    movie_details_response = requests.get(movie_details_url, headers=TMDB_HEADERS)
     return movie_details_response.json()
 
 
 # Function to fetch keywords for a movie
 def get_movie_keywords(movie_id):
     keywords_url = f"{url}movie/{movie_id}/keywords"
-    response = requests.get(keywords_url, headers=headers)
+    response = requests.get(keywords_url, headers=TMDB_HEADERS)
     if response.status_code == 200:
         # Extract and return the names of the keywords
         return [
@@ -130,8 +130,8 @@ def get_movie_keywords(movie_id):
 
 # Function to fetch keywords for a TV show
 def get_tv_keywords(tv_id):
-    keywords_url = f"{url}tv/{tv_id}/keywords"
-    response = requests.get(keywords_url, headers=headers)
+    keywords_url = f"{TMDB_URL}tv/{tv_id}/keywords"
+    response = requests.get(keywords_url, headers=TMDB_HEADERS)
     if response.status_code == 200:
         return [
             keyword["name"].lower() for keyword in response.json().get("results", [])
@@ -197,7 +197,7 @@ def clean_filename(filename):
 
 
 # Fetch movie or TV show logo
-def get_logo_fallback(media_type, media, language=language_short):
+def get_logo_fallback(media_type, media):
     if media_type=="movie":
         name = media["title"]
         original = media["original_title"]
@@ -206,13 +206,13 @@ def get_logo_fallback(media_type, media, language=language_short):
         original = media["original_name"]
 
     if similarity(name, original) > 0.9:
-        logo = get_multilogo(media_type, media["id"], original_language=media["original_language"], language=language_short)
+        logo = get_multilogo(media_type, media["id"], original_language=media["original_language"])
     else:
-        logo = get_logo(media_type, media["id"], language=language_short)
+        logo = get_logo(media_type, media["id"], LANGUAGE_SHORT)
 
     if logo is None and media["original_language"] != "en":
-        details_url = f"{url}{media_type}/{media['id']}?language=en-US"
-        details_response = requests.get(details_url, headers=headers)
+        details_url = f"{TMDB_URL}{media_type}/{media['id']}?language=en-US"
+        details_response = requests.get(details_url, headers=TMDB_HEADERS)
         details_data = details_response.json()
 
         if media_type=="movie":
@@ -225,10 +225,9 @@ def get_logo_fallback(media_type, media, language=language_short):
 
     return logo
 
-def get_logo(media_type, media_id, language=language_short):
-    logo_url = f"{url}{media_type}/{media_id}/images?language={language}"
-    logo_response = requests.get(logo_url, headers=headers)
-    logo_data = logo_response.json()
+def get_logo(media_type, media_id, language):
+    logo_url = f"{TMDB_URL}{media_type}/{media_id}/images?language={language}"
+    logo_response = requests.get(logo_url, headers=TMDB_HEADERS)
     if logo_response.status_code == 200:
         logos = logo_response.json().get("logos", [])
         for logo in logos:
@@ -238,15 +237,15 @@ def get_logo(media_type, media_id, language=language_short):
                 return logo["file_path"]
     return None
 
-def get_multilogo(media_type, media_id, original_language, language=language_short):
-    logo_url = f"{url}{media_type}/{media_id}/images?include_image_language={language},{original_language}"
-    logo_response = requests.get(logo_url, headers=headers)
+def get_multilogo(media_type, media_id, original_language):
+    logo_url = f"{TMDB_URL}{media_type}/{media_id}/images?include_image_language={LANGUAGE_SHORT},{original_language}"
+    logo_response = requests.get(logo_url, headers=TMDB_HEADERS)
     
     logos = logo_response.json().get("logos", [])
     valid_logos = [logo for logo in logos if logo["file_path"].endswith(".png")]
                 
     for valid_logo in valid_logos:
-        if valid_logo["iso_639_1"] == language_short:
+        if valid_logo["iso_639_1"] == LANGUAGE_SHORT:
             return valid_logo["file_path"]
 
     for valid_logo in valid_logos:
@@ -341,9 +340,9 @@ def process_image(
 
         # Get logo image URL
         if is_movie:
-            logo_path = get_logo_fallback("movie", movie, language=language_short)
+            logo_path = get_logo_fallback("movie", movie)
         else:
-            logo_path = get_logo_fallback("tv", tvshow, language=language_short)
+            logo_path = get_logo_fallback("tv", tvshow)
 
         logo_drawn = False  # Flag to track if logo is drawn
 
@@ -380,11 +379,11 @@ def process_image(
         # Draw custom text
         draw.text(
             (custom_position[0] + shadow_offset, custom_position[1] + shadow_offset),
-            now_tendring_text,
+            NOW_TRENDING_TEXT,
             font=font_custom,
             fill=shadow_color,
         )
-        draw.text(custom_position, now_tendring_text, font=font_custom, fill=metadata_color)
+        draw.text(custom_position, NOW_TRENDING_TEXT, font=font_custom, fill=metadata_color)
 
         # Save the resized image
         filename = os.path.join(background_dir, f"{clean_filename(title)}.jpg")
@@ -398,9 +397,6 @@ def process_image(
 # Filter criteria
 def should_exclude_movie(
     movie,
-    movie_excluded_countries=movie_excluded_countries,
-    movie_excluded_genres=movie_excluded_genres,
-    excluded_keywords=excluded_keywords,
 ):
     # Check if the movie's country is in the excluded countries list
     country = movie.get("origin_country", "").lower()
@@ -409,7 +405,7 @@ def should_exclude_movie(
     genres = [movie_genres.get(genre_id, "") for genre_id in movie.get("genre_ids", [])]
 
     # Fetch movie keywords
-    movie_keywords = get_movie_keywords(movie["id"]) if excluded_keywords else []
+    movie_keywords = get_movie_keywords(movie["id"]) if EXCLUDED_KEYWORDS else []
 
     # Check release date
     release_date_str = movie.get("release_date")
@@ -419,10 +415,10 @@ def should_exclude_movie(
 
     # Return True if excluded by country, genre, keywords, or release date
     if (
-        country in movie_excluded_countries
-        or any(genre in movie_excluded_genres for genre in genres)
-        or any(keyword in movie_keywords for keyword in excluded_keywords)
-        or (release_date and release_date < max_air_date)
+        country in MOVIE_EXCLUDED_COUNTRIES
+        or any(genre in MOVIE_EXCLUDED_GENRES for genre in genres)
+        or any(keyword in movie_keywords for keyword in EXCLUDED_KEYWORDS)
+        or (release_date and release_date < MAX_AIR_DATE)
     ):
         return True
     return False
@@ -430,9 +426,6 @@ def should_exclude_movie(
 
 def should_exclude_tvshow(
     tvshow,
-    tv_excluded_countries=tv_excluded_countries,
-    tv_excluded_genres=tv_excluded_genres,
-    excluded_keywords=excluded_keywords,
 ):
     # Check if the TV show's country is in the excluded countries list
     country = tvshow.get("origin_country", [""])[0].lower()
@@ -441,7 +434,7 @@ def should_exclude_tvshow(
     genres = [tv_genres.get(genre_id, "") for genre_id in tvshow.get("genre_ids", [])]
 
     # Fetch TV show keywords
-    tv_keywords = get_tv_keywords(tvshow["id"]) if excluded_keywords else []
+    tv_keywords = get_tv_keywords(tvshow["id"]) if EXCLUDED_KEYWORDS else []
 
     # Check next episode to air date
     last_air_date_str = get_tv_show_details(tvshow["id"]).get("last_air_date")
@@ -451,10 +444,10 @@ def should_exclude_tvshow(
 
     # Return True if excluded by country, genre, keywords, or next episode air date
     if (
-        country in tv_excluded_countries
-        or any(genre in tv_excluded_genres for genre in genres)
-        or any(keyword in tv_keywords for keyword in excluded_keywords)
-        or (last_air_date and last_air_date < max_air_date)
+        country in TV_EXCLUDED_COUNTRIES
+        or any(genre in TV_EXCLUDED_GENRES for genre in genres)
+        or any(keyword in tv_keywords for keyword in EXCLUDED_KEYWORDS)
+        or (last_air_date and last_air_date < MAX_AIR_DATE)
     ):
         return True
     return False
@@ -537,13 +530,14 @@ for tvshow in tvshows:
     seasons = tv_details.get("number_of_seasons", 0)
 
     # Get network logo URL or fallback
-    # Since we only have couple of allowed_networks, might be better to replace with own logos to unify colours and sizes
+    # Since we only have couple of ALLOWED_NETWORKS, might be better to replace with own logos to unify colours and sizes
+    # And this info is only returned for tvshows, not for movies unluckily
     network_image_url = None
     networks = tv_details.get("networks", [])
     for network in networks:
         name = network.get("name")
         logo_path = network.get("logo_path")
-        if name in allowed_networks and logo_path:
+        if name in ALLOWED_NETWORKS and logo_path:
             network_image_url = f"https://image.tmdb.org/t/p/original{logo_path}"
             break
 

@@ -1,4 +1,6 @@
-# Android TV Background
+# Android TV Background Reddit
+
+Retrieves TMDB Trending movies and TV shows and uploads it to a subreddit for using it as Android TV Wallpaper (eg, with Projectivy Launcher)
 
 This is a simple script to retrieve Plex or TMDB media background and use it as Android TV Wallpaper
 I developed this to use it with alternative Android TV launchers
