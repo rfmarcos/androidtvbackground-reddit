@@ -17,7 +17,8 @@ You can use the existing subreddits:
 * 🇺🇸 [`r/AndroidTVWallpapers`](https://www.reddit.com/r/AndroidTVWallpapers) *(English)*
 * 🇪🇸 [`r/AndroidTVWallpapersES`](https://www.reddit.com/r/AndroidTVWallpapersES) *(Spanish)*
 
-Or easily host your own subreddit using your own API credentials.
+🕒 **Automatic updates:**  
+New wallpapers are automatically generated and uploaded **every Monday at 09:00 UTC**.
 
 ---
 
