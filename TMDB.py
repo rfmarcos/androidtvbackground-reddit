@@ -530,8 +530,7 @@ for tvshow in tvshows:
     seasons = tv_details.get("number_of_seasons", 0)
 
     # Get network logo URL or fallback
-    # Since we only have couple of ALLOWED_NETWORKS, might be better to replace with own logos to unify colours and sizes
-    # And this info is only returned for tvshows, not for movies unluckily
+    # TODO query watchmode API, for better results, should also work with movies
     network_image_url = None
     networks = tv_details.get("networks", [])
     for network in networks:
