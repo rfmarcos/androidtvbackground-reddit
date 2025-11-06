@@ -2,6 +2,8 @@
 
 Automatically generate high-quality **Android TV wallpapers** from **TMDB trending and popular movies/TV shows**, and upload them to a dedicated **Reddit subreddit** — perfect for use as dynamic backgrounds on Android TV launchers such as *Projectivy Launcher*.
 
+![Weapons](https://github.com/user-attachments/assets/d8adb105-2cce-4d2d-aa71-657cecc47333)
+
 ---
 
 ## 🧠 What It Does
