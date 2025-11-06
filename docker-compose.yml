@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  tmdb_generator:
+    image: ghcr.io/rfmarcos/androidtvbackground-reddit:latest
+    container_name: tmdb_generator
+    command: python -u TMDB.py
+    environment:
+      TMDB_BEARER_TOKEN: ${TMDB_BEARER_TOKEN}
+    volumes:
+      - ./tmdb_backgrounds:/app/tmdb_backgrounds
+    restart: "no"
+
+  reddit_uploader:
+    image: ghcr.io/rfmarcos/androidtvbackground-reddit:latest
+    container_name: reddit_uploader
+    command: python -u upload_wallpaper.py
+    environment:
+      REDDIT_CLIENT_ID: ${REDDIT_CLIENT_ID}
+      REDDIT_CLIENT_SECRET: ${REDDIT_CLIENT_SECRET}
+      REFRESH_TOKEN: ${REFRESH_TOKEN}
+      REDDIT_SUBREDDIT: ${REDDIT_SUBREDDIT}
+    volumes:
+      - ./tmdb_backgrounds:/app/tmdb_backgrounds
+      - ./uploaded_wallpapers.txt:/app/uploaded_wallpapers.txt
+    restart: "no"

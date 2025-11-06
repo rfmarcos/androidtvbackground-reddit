@@ -26,7 +26,7 @@ reddit = praw.Reddit(
 subreddit = reddit.subreddit(os.getenv('SUBREDDIT'))
 
 # Directories where wallpapers are stored
-wallpapers_dirs = ["plex_backgrounds", "tmdb_backgrounds"]
+wallpapers_dirs = ["tmdb_backgrounds"]
 
 # Time limit for deleting old posts (2 weeks)
 time_limit = timedelta(weeks=2)
@@ -40,7 +40,7 @@ for submission in subreddit.new(limit=None):
     post_age = current_time - datetime.utcfromtimestamp(submission.created_utc)
     
     # Skip if the post is not an image or doesn't match your tracking criteria
-    if submission.title.startswith("Wallpaper:") and "PLEX" not in submission.title.upper():
+    if submission.title.startswith("Wallpaper:"):
         # Try to delete the post
         try:
             # Remove "Wallpaper: " prefix to get the original filename

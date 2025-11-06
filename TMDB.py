@@ -41,6 +41,8 @@ ALLOWED_NETWORKS = {"Netflix", "HBO", "Prime Video", "Disney+"}
 LANGUAGE = "es-ES"
 LANGUAGE_SHORT = "es"
 NOW_TRENDING_TEXT = "En tendencia en"
+SEASON_TEXT = "Temporada"
+SEASONS_TEXT = "Temporadas"
 
 # Save font locally
 truetype_url = (
@@ -323,7 +325,7 @@ def process_image(
             additional_info = f"{duration}"
         else:
             genre_text = genre
-            additional_info = f"{seasons} {'Temporada' if seasons == 1 else 'Temporadas'}"
+            additional_info = f"{seasons} {SEASON_TEXT if seasons == 1 else SEASONS_TEXT}"
 
         rating_text = "TMDB: " + str(rating)
         year_text = truncate(str(year), 7)

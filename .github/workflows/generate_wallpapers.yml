@@ -13,30 +13,32 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
         with:
-          python-version: 3.8
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
+      - name: Pull Docker image
+        run: docker pull ghcr.io/rfmarcos/androidtvbackground-reddit:latest
 
-      - name: Run TMDB fetch
-        env:
-          TMDB_BEARER_TOKEN: ${{ secrets.TMDB_BEARER_TOKEN }}
+      - name: Run TMDB fetch inside Docker
         run: |
-          python -u TMDB.py
+          docker run --rm \
+            -e TMDB_BEARER_TOKEN=${{ secrets.TMDB_BEARER_TOKEN }} \
+            -v ${{ github.workspace }}/tmdb_backgrounds:/app/tmdb_backgrounds \
+            ghcr.io/rfmarcos/androidtvbackground-reddit:latest TMDB.py
 
       - name: List generated images
         run: |
           echo "Listing contents of tmdb_backgrounds/"
           ls -la tmdb_backgrounds || echo "No images generated"
-       
+
       - name: Set date variable
         id: date
         run: echo "DATE=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_ENV
-        
+
       - name: Upload images as artifact
         if: success()
         uses: actions/upload-artifact@v4
