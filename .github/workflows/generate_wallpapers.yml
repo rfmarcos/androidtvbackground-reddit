@@ -15,7 +15,7 @@ jobs:
       REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
       SUBREDDIT: ${{ secrets.REDDIT_SUBREDDIT }}
     container:
-      image: ghcr.io/${{ github.actor }}/${{ github.repository }}:latest
+      image: ghcr.io/${{ github.repository }}:latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
