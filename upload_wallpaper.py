@@ -1,7 +1,9 @@
 import os
+from dotenv import load_dotenv
 import praw
 from datetime import datetime, timedelta
 
+load_dotenv()
 
 # Initialize the Reddit instance
 reddit = praw.Reddit(
