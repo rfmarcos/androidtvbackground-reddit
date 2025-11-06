@@ -1,4 +1,4 @@
-name: Generate and Upload Wallpapers to Subreddit
+name: EN - Generate and Upload Wallpapers to Subreddit
 
 on:
   schedule:
