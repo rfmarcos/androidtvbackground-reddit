@@ -12,8 +12,14 @@ import difflib
 
 load_dotenv()
 
-# If TMDB API Read Access Token key is not hardcoded, then load from environment variables
 TMDB_TOKEN = os.getenv("TMDB_BEARER_TOKEN")
+
+# Language properties
+LANGUAGE = os.getenv("LANGUAGE") or "en-US"
+LANGUAGE_SHORT = os.getenv("LANGUAGE_SHORT") or "en"
+NOW_TRENDING_TEXT =  os.getenv("NOW_TRENDING_TEXT") or "Now trending on" #Check text length to adjust network logo position
+SEASON_TEXT = os.getenv("SEASON_TEXT") or "Season"
+SEASONS_TEXT = os.getenv("SEASONS_TEXT") or "Seasons"
 
 # Base URL for the API
 TMDB_URL = "https://api.themoviedb.org/3/"
@@ -39,13 +45,6 @@ MAX_AIR_DATE = (
 
 # Allowed networks to show as image instead of tmdb (same name as in tmdb api)
 ALLOWED_NETWORKS = {"Netflix", "HBO", "Prime Video", "Disney+"}
-
-# Language
-LANGUAGE = "es-ES"
-LANGUAGE_SHORT = "es"
-NOW_TRENDING_TEXT = "En tendencia en"
-SEASON_TEXT = "Temporada"
-SEASONS_TEXT = "Temporadas"
 
 # Save font locally
 truetype_url = (
