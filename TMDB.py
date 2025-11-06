@@ -13,9 +13,7 @@ import difflib
 load_dotenv()
 
 # If TMDB API Read Access Token key is not hardcoded, then load from environment variables
-tmdb_token_2 = os.getenv("TMDB_BEARER_TOKEN")
-print(f"Token: {tmdb_token_2}")
-TMDB_TOKEN = os.environ["TMDB_BEARER_TOKEN"]
+TMDB_TOKEN = os.getenv("TMDB_BEARER_TOKEN")
 
 # Base URL for the API
 TMDB_URL = "https://api.themoviedb.org/3/"
