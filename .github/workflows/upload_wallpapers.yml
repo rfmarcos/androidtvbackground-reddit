@@ -7,18 +7,28 @@ on:
 jobs:
   generate-and-upload-wallpapers:
     runs-on: ubuntu-latest
-
+    env:
+      TMDB_BEARER_TOKEN: ${{ secrets.TMDB_BEARER_TOKEN }}
+      CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+      CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+      REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+      SUBREDDIT: AndroidTVWallpapersES
+      LANGUAGE: es-ES
+      LANGUAGE_SHORT: es
+      NOW_TRENDING_TEXT: En tendencia en
+      SEASON_TEXT: Temporada
+      SEASONS_TEXT: Temporadas
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0  # Fetch all history for all branches and tags
+          fetch-depth: 0 
 
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.8'  # Change this to the version you need
+          python-version: 3.12
 
       - name: Install Dependencies
         run: |
@@ -27,24 +37,7 @@ jobs:
       - name: Run TMDB Wallpaper Generation Script
         run: |
           python -u TMDB.py
-        env:
-          TMDB_BEARER_TOKEN: ${{ secrets.TMDB_BEARER_TOKEN }}
 
       - name: Upload Wallpapers to Subreddit
         run: |
           python -u upload_wallpaper.py
-        env:
-          CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
-          REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
-          SUBREDDIT: ${{ secrets.REDDIT_SUBREDDIT }}
-
-      - name: Commit and Push Metadata Changes
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git add uploaded_wallpapers.txt  # Only add the metadata file
-          git commit -m "Update metadata file to track uploaded images" || echo "No changes to commit"
-          git push origin HEAD
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

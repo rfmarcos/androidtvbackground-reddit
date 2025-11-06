@@ -8,7 +8,17 @@ on:
 jobs:
   generate-wallpapers:
     runs-on: ubuntu-latest
-
+    env:
+      TMDB_BEARER_TOKEN: ${{ secrets.TMDB_BEARER_TOKEN }}
+      CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+      CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+      REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+      SUBREDDIT: AndroidTVWallpapersES
+      LANGUAGE: es-ES
+      LANGUAGE_SHORT: es
+      NOW_TRENDING_TEXT: En tendencia en
+      SEASON_TEXT: Temporada
+      SEASONS_TEXT: Temporadas
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -16,27 +26,18 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: 3.12
 
       - name: Install dependencies
-        run: |
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
-      - name: Run TMDB fetch
-        env:
-          TMDB_BEARER_TOKEN: ${{ secrets.TMDB_BEARER_TOKEN }}
-        run: |
-          python -u TMDB.py
+      - name: Run TMDB script
+        run: python -u TMDB.py
 
-      - name: List generated images
-        run: |
-          echo "Listing contents of tmdb_backgrounds/"
-          ls -la tmdb_backgrounds || echo "No images generated"
-       
       - name: Set date variable
         id: date
         run: echo "DATE=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_ENV
-        
+
       - name: Upload images as artifact
         if: success()
         uses: actions/upload-artifact@v4

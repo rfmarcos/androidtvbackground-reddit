@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  androidtvbackground:
+    image: ghcr.io/rfmarcos/androidtvbackground-reddit:latest
+    container_name: androidtvbackground
+    env_file: .env
+    volumes:
+      - ./tmdb_backgrounds:/app/tmdb_backgrounds
+    command: ["TMDB.py"]
+
+  reddit-upload:
+    image: ghcr.io/rfmarcos/androidtvbackground-reddit:latest
+    container_name: reddit-upload
+    env_file: .env
+    volumes:
+      - ./tmdb_backgrounds:/app/tmdb_backgrounds
+    command: ["upload_wallpaper.py"]

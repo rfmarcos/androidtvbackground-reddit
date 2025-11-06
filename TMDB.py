@@ -3,14 +3,23 @@ from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
 from io import BytesIO
 import io
 import os
+from dotenv import load_dotenv
 import shutil
 from urllib.request import urlopen
 import textwrap
 from datetime import datetime, timedelta
 import difflib
 
-# If TMDB API Read Access Token key is not hardcoded, then load from environment variables
-TMDB_TOKEN = os.environ["TMDB_BEARER_TOKEN"]
+load_dotenv()
+
+TMDB_TOKEN = os.getenv("TMDB_BEARER_TOKEN")
+
+# Language properties
+LANGUAGE = os.getenv("LANGUAGE") or "en-US"
+LANGUAGE_SHORT = os.getenv("LANGUAGE_SHORT") or "en"
+NOW_TRENDING_TEXT =  os.getenv("NOW_TRENDING_TEXT") or "Now trending on" #Check text length to adjust network logo position
+SEASON_TEXT = os.getenv("SEASON_TEXT") or "Season"
+SEASONS_TEXT = os.getenv("SEASONS_TEXT") or "Seasons"
 
 # Base URL for the API
 TMDB_URL = "https://api.themoviedb.org/3/"
@@ -36,11 +45,6 @@ MAX_AIR_DATE = (
 
 # Allowed networks to show as image instead of tmdb (same name as in tmdb api)
 ALLOWED_NETWORKS = {"Netflix", "HBO", "Prime Video", "Disney+"}
-
-# Language
-LANGUAGE = "es-ES"
-LANGUAGE_SHORT = "es"
-NOW_TRENDING_TEXT = "En tendencia en"
 
 # Save font locally
 truetype_url = (
@@ -142,7 +146,15 @@ def get_tv_keywords(tv_id):
 # Create a directory to save the backgrounds and clear its contents if it exists
 background_dir = "tmdb_backgrounds"
 if os.path.exists(background_dir):
-    shutil.rmtree(background_dir)
+    for file in os.listdir(background_dir):
+        file_path = os.path.join(background_dir, file)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+        except Exception as e:
+            print(f"[WARN] Failed to delete {file_path}: {e}")
 os.makedirs(background_dir, exist_ok=True)
 
 
@@ -323,7 +335,7 @@ def process_image(
             additional_info = f"{duration}"
         else:
             genre_text = genre
-            additional_info = f"{seasons} {'Temporada' if seasons == 1 else 'Temporadas'}"
+            additional_info = f"{seasons} {SEASON_TEXT if seasons == 1 else SEASONS_TEXT}"
 
         rating_text = "TMDB: " + str(rating)
         year_text = truncate(str(year), 7)
@@ -454,7 +466,6 @@ def should_exclude_tvshow(
 
 
 # Process each movie
-
 movies = trending_movies.get("results", []) + discover_movies.get("results", [])
 # Sort movies by rating (descending)
 movies = sorted(movies, key=lambda m: m.get("vote_average", 0), reverse=True)
