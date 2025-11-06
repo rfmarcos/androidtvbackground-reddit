@@ -8,7 +8,14 @@ on:
 jobs:
   generate-wallpapers:
     runs-on: ubuntu-latest
-
+    env:
+      TMDB_BEARER_TOKEN: ${{ secrets.TMDB_BEARER_TOKEN }}
+      CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
+      CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
+      REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+      SUBREDDIT: ${{ secrets.REDDIT_SUBREDDIT }}
+    container:
+      image: ghcr.io/${{ github.actor }}/${{ github.repository }}:latest
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -20,20 +27,8 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Pull Docker image
-        run: docker pull ghcr.io/rfmarcos/androidtvbackground-reddit:latest
-
-      - name: Run TMDB fetch inside Docker
-        run: |
-          docker run --rm \
-            -e TMDB_BEARER_TOKEN=${{ secrets.TMDB_BEARER_TOKEN }} \
-            -v ${{ github.workspace }}/tmdb_backgrounds:/app/tmdb_backgrounds \
-            ghcr.io/rfmarcos/androidtvbackground-reddit:latest TMDB.py
-
-      - name: List generated images
-        run: |
-          echo "Listing contents of tmdb_backgrounds/"
-          ls -la tmdb_backgrounds || echo "No images generated"
+      - name: Run TMDB script
+        run: python -u TMDB.py
 
       - name: Set date variable
         id: date
