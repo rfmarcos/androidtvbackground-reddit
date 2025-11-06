@@ -57,8 +57,8 @@ The scripts retrieves the background of the latests shows (movies or tv shows), 
 - You can edit the script to change the color, the text position or font
 - You can edit the code to change the endpoints for trending shows that is here
   ```
-  trending_movies_url = f'{url}trending/movie/week?language=en-US'
-  trending_tvshows_url = f'{url}trending/tv/week?language=en-US'
+  trending_movies_url = f'{TMDB_URL}trending/movie/week?language=en-US'
+  trending_tvshows_url = f'{TMDB_URL}trending/tv/week?language=en-US'
   ```
   and replace it by using TMDB API Discover Endpoint
   You can find details on Discovery endpoints here  :
@@ -71,8 +71,8 @@ The scripts retrieves the background of the latests shows (movies or tv shows), 
 
   ```
   # Endpoint for shows with genre action from 2022
-  trending_movies_url = f'{url}discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc&with_genres=80&year=2022'
-  trending_tvshows_url = f'{url}discover/tv?first_air_date_year=2022&include_adult=false&include_null_first_air_dates=false&language=en-US&page=1&sort_by=popularity.desc&with_genres=80'
+  trending_movies_url = f'{TMDB_URL}discover/movie?include_adult=false&include_video=false&language=en-US&page=1&sort_by=popularity.desc&with_genres=80&year=2022'
+  trending_tvshows_url = f'{TMDB_URL}discover/tv?first_air_date_year=2022&include_adult=false&include_null_first_air_dates=false&language=en-US&page=1&sort_by=popularity.desc&with_genres=80'
   ```
   
   The genre is set by an id, you can get the list from these url

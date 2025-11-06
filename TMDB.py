@@ -111,14 +111,14 @@ def get_tv_show_details(tv_id):
 
 # Fetching movie details
 def get_movie_details(movie_id):
-    movie_details_url = f"{url}movie/{movie_id}?language={LANGUAGE}"
+    movie_details_url = f"{TMDB_URL}movie/{movie_id}?language={LANGUAGE}"
     movie_details_response = requests.get(movie_details_url, headers=TMDB_HEADERS)
     return movie_details_response.json()
 
 
 # Function to fetch keywords for a movie
 def get_movie_keywords(movie_id):
-    keywords_url = f"{url}movie/{movie_id}/keywords"
+    keywords_url = f"{TMDB_URL}movie/{movie_id}/keywords"
     response = requests.get(keywords_url, headers=TMDB_HEADERS)
     if response.status_code == 200:
         # Extract and return the names of the keywords
