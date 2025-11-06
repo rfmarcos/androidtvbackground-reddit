@@ -33,9 +33,9 @@ time_limit = timedelta(weeks=2)
 current_time = datetime.utcnow()
 
 # Delete old posts
-print("[DEBUG] Checking old posts for deletion...")  # <-- log
+print("[DEBUG] Checking old posts for deletion...")
 for submission in subreddit.new(limit=None):
-    print(f"[DEBUG] Deleting post: {submission.title} (Posted: {submission.created_utc})")  # <-- log
+    print(f"[DEBUG] Deleting post: {submission.title} (Posted: {submission.created_utc})")
     # Calculate the age of the submission
     post_age = current_time - datetime.utcfromtimestamp(submission.created_utc)
     
@@ -62,7 +62,7 @@ with open(metadata_file, "w") as f:
         f.write(f"{img}\n")
 
 # Upload new wallpapers
-print("[DEBUG] Starting upload of new wallpapers...")  # <-- log
+print("[DEBUG] Starting upload of new wallpapers...")
 for wallpapers_dir in wallpapers_dirs:
     if os.path.exists(wallpapers_dir):
         for filename in os.listdir(wallpapers_dir):
