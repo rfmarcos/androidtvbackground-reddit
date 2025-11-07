@@ -289,7 +289,7 @@ def get_providers_logos(media_type, media_id):
         logo_file = name.lower().replace(' ', '') + '.png'
         try:
             img_path = os.path.join(os.path.dirname(__file__), f"resources/providers/{logo_file}")
-            img = Image.open(img_path).convert("RGBA")
+            img = resize_image(Image.open(img_path).convert("RGBA"), 41)
             providers_logos.append(img)
         except Exception as e:
             print(f"Error getting provider logo for {name}: {e}")
