@@ -325,9 +325,9 @@ def process_image(
         overview_position = (210, 730)
         shadow_offset = 2
         info_position = (210, 650)  # Adjusted position for logo and info
-        custom_position = (210, overview_position[1] + overview_height + 20)
+        custom_position = (210, overview_position[1] + overview_height + 30)
 
-        bckg.paste(networklogo, (680, overview_position[1] + overview_height + 40), networklogo)
+        bckg.paste(networklogo, (680, overview_position[1] + overview_height + 50), networklogo)
 
         # Draw Overview for info
         draw.text((overview_position[0] + shadow_offset, overview_position[1] + shadow_offset), wrapped_overview, font=font_overview, fill=shadow_color)
