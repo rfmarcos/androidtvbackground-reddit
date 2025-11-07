@@ -328,8 +328,10 @@ def process_image(
         overview_lines = wrapped_overview.count("\n") + 1
         line_height = font_overview.getbbox("A")[3]
         overview_height = overview_lines * line_height
-        custom_y = overview_position[1] + overview_height + 80
+        custom_y = overview_position[1] + overview_height
+
         custom_position = (210, custom_y)
+        bckg.paste(networklogo, (680, custom_y+20), networklogo)
 
         # Draw Overview for info
         draw.text((overview_position[0] + shadow_offset, overview_position[1] + shadow_offset), wrapped_overview, font=font_overview, fill=shadow_color)
