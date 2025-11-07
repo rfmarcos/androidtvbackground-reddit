@@ -270,6 +270,30 @@ def get_multilogo(media_type, media_id, original_language):
 def similarity(a, b):
     return difflib.SequenceMatcher(None, a.lower(), b.lower()).ratio()
 
+def get_providers_logos(media_type, media_id):
+    providers_url = f"{TMDB_URL}{media_type}/{media_id}/watch/providers"
+    providers_response = requests.get(providers_url, headers=TMDB_HEADERS)
+    providers = (
+            providers_response.json()
+            .get("results", {})
+            .get(LANGUAGE_SHORT.upper(), {})
+            .get("flatrate", [])
+        )
+    
+    if not providers:
+        return []
+    
+    providers.sort(key=lambda provider: provider.get("display_priority", 999))
+
+    providers_logos = [
+        f"https://image.tmdb.org/t/p/original{provider.get('logo_path')}"
+        for provider in providers
+        if provider.get("logo_path")
+    ]
+
+    return providers_logos
+
+
 def process_image(
     image_url, title, is_movie, genre, year, rating, duration=None, seasons=None
 ):
@@ -286,16 +310,16 @@ def process_image(
         bckg = Image.open(os.path.join(os.path.dirname(__file__), "bckg.png"))
         overlay = Image.open(os.path.join(os.path.dirname(__file__), "overlay.png"))
 
+
+        providers_logos = []
         try:
-            if network_image_url and network_image_url.startswith("http"):
-                response = requests.get(network_image_url, timeout=10)
+            for provider_image_url in provider_images_urls:
+                response = requests.get(provider_image_url, timeout=10)
                 response.raise_for_status()
-                networklogo = resize_image(Image.open(io.BytesIO(response.content)), 41)
-                networklogo = networklogo.convert("RGBA")
-            else:
-                networklogo = Image.open(os.path.join(os.path.dirname(__file__), "tmdblogo.png"))
+                providerlogo = resize_image(Image.open(io.BytesIO(response.content)), 41)
+                providers_logos.append(providerlogo.convert("RGBA"))
         except Exception:
-            networklogo = Image.open(os.path.join(os.path.dirname(__file__), "tmdblogo.png"))
+            providers_logos = [Image.open(os.path.join(os.path.dirname(__file__), "tmdblogo.png"))]
 
         # Paste images
         bckg.paste(image, (1175, 0))
@@ -327,7 +351,10 @@ def process_image(
         info_position = (210, 650)  # Adjusted position for logo and info
         custom_position = (210, overview_position[1] + overview_height + 30)
 
-        bckg.paste(networklogo, (680, overview_position[1] + overview_height + 50), networklogo)
+        provider_x_position = 680
+        for provider_logo in providers_logos[:3]:
+            bckg.paste(provider_logo, (provider_x_position, overview_position[1] + overview_height + 50), provider_logo)
+            provider_x_position += provider_logo.width + 10
 
         # Draw Overview for info
         draw.text((overview_position[0] + shadow_offset, overview_position[1] + shadow_offset), wrapped_overview, font=font_overview, fill=shadow_color)
@@ -503,6 +530,9 @@ for movie in movies:
     else:
         duration = "N/A"
 
+    # Get providers logos
+    provider_images_urls = get_providers_logos('movie', movie['id'])
+
     # Check if backdrop image is available
     backdrop_path = movie["backdrop_path"]
     if backdrop_path:
@@ -546,16 +576,8 @@ for tvshow in tvshows:
     tv_details = get_tv_show_details(tvshow["id"])
     seasons = tv_details.get("number_of_seasons", 0)
 
-    # Get network logo URL or fallback
-    # TODO query watchmode API, for better results, should also work with movies
-    network_image_url = None
-    networks = tv_details.get("networks", [])
-    for network in networks:
-        name = network.get("name")
-        logo_path = network.get("logo_path")
-        if name in ALLOWED_NETWORKS and logo_path:
-            network_image_url = f"https://image.tmdb.org/t/p/original{logo_path}"
-            break
+    # Get providers logos
+    provider_images_urls = get_providers_logos('tv', tvshow['id'])
 
     # Check if backdrop image is available
     backdrop_path = tvshow["backdrop_path"]
