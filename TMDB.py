@@ -20,6 +20,7 @@ LANGUAGE_SHORT = os.getenv("LANGUAGE_SHORT") or "en"
 NOW_TRENDING_TEXT =  os.getenv("NOW_TRENDING_TEXT") or "Now trending on" #Check text length to adjust network logo position
 SEASON_TEXT = os.getenv("SEASON_TEXT") or "Season"
 SEASONS_TEXT = os.getenv("SEASONS_TEXT") or "Seasons"
+OVERVIEW_LINES = os.getenv("OVERVIEW_LINES") or "4"
 
 # Base URL for the API
 TMDB_URL = "https://api.themoviedb.org/3/"
@@ -299,7 +300,6 @@ def process_image(
         # Paste images
         bckg.paste(image, (1175, 0))
         bckg.paste(overlay, (1175, 0), overlay)
-        bckg.paste(networklogo, (680, 890), networklogo)
 
         # Add title text with shadow
         draw = ImageDraw.Draw(bckg)
@@ -315,23 +315,19 @@ def process_image(
         overview_color = (150, 150, 150)  # Grey color for the summary
         metadata_color = "white"
 
+        # Wrap overview text
+        wrapped_overview = "\n".join(textwrap.wrap(overview, width=70, max_lines=OVERVIEW_LINES, placeholder=" ..."))
+        line_height = font_overview.getbbox("A")[3]
+        overview_height = (wrapped_overview.count("\n") + 1) * line_height
+
         # Text position
         title_position = (200, 420)
         overview_position = (210, 730)
         shadow_offset = 2
         info_position = (210, 650)  # Adjusted position for logo and info
-        custom_position = (210, 870)
+        custom_position = (210, overview_position[1] + overview_height + 20)
 
-        # Wrap overview text
-        wrapped_overview = "\n".join(textwrap.wrap(overview, width=70, max_lines=4, placeholder=" ..."))
-
-        overview_lines = wrapped_overview.count("\n") + 1
-        line_height = font_overview.getbbox("A")[3]
-        overview_height = overview_lines * line_height
-        custom_y = overview_position[1] + overview_height
-
-        custom_position = (210, custom_y)
-        bckg.paste(networklogo, (680, custom_y+20), networklogo)
+        bckg.paste(networklogo, (680, overview_position[1] + overview_height + 40), networklogo)
 
         # Draw Overview for info
         draw.text((overview_position[0] + shadow_offset, overview_position[1] + shadow_offset), wrapped_overview, font=font_overview, fill=shadow_color)
