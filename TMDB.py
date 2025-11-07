@@ -323,7 +323,7 @@ def process_image(
         custom_position = (210, 870)
 
         # Wrap overview text
-        wrapped_overview = "\n".join(textwrap.wrap(overview, width=70, max_lines=2, placeholder=" ..."))
+        wrapped_overview = "\n".join(textwrap.wrap(overview, width=70, max_lines=4, placeholder=" ..."))
 
         # Draw Overview for info
         draw.text((overview_position[0] + shadow_offset, overview_position[1] + shadow_offset), wrapped_overview, font=font_overview, fill=shadow_color)
@@ -432,6 +432,7 @@ def should_exclude_movie(
         or any(keyword in movie_keywords for keyword in EXCLUDED_KEYWORDS)
         or (release_date and release_date < MAX_AIR_DATE)
     ):
+        print(f"Excluding movie: {movie["title"]}")
         return True
     return False
 
@@ -461,6 +462,7 @@ def should_exclude_tvshow(
         or any(keyword in tv_keywords for keyword in EXCLUDED_KEYWORDS)
         or (last_air_date and last_air_date < MAX_AIR_DATE)
     ):
+        print(f"Excluding tvshow: {tvshow["name"]}")
         return True
     return False
 
