@@ -328,13 +328,8 @@ def process_image(
         overview_lines = wrapped_overview.count("\n") + 1
         line_height = font_overview.getbbox("A")[3]
         overview_height = overview_lines * line_height
-
-        # Recolocar elementos siguientes
         custom_y = overview_position[1] + overview_height + 80
-        networklogo_y = custom_y + 80    
-
-        overview_position = (210, custom_y)
-        custom_position = (210, networklogo_y)
+        custom_position = (210, custom_y)
 
         # Draw Overview for info
         draw.text((overview_position[0] + shadow_offset, overview_position[1] + shadow_offset), wrapped_overview, font=font_overview, fill=shadow_color)
