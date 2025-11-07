@@ -280,16 +280,22 @@ def get_providers_logos(media_type, media_id):
             .get("flatrate", [])
         )
     
-    if not providers:
-        return []
-    
     providers.sort(key=lambda provider: provider.get("display_priority", 999))
 
-    providers_logos = [
-        f"https://image.tmdb.org/t/p/original{provider.get('logo_path')}"
-        for provider in providers
-        if provider.get("logo_path")
-    ]
+    providers_logos = []
+
+    for provider in providers:
+        name = provider.get("provider_name")
+        logo_file = name.lower().replace(' ', '') + '.png'
+        try:
+            img_path = os.path.join(os.path.dirname(__file__), f"resources/providers/{logo_file}")
+            img = Image.open(img_path).convert("RGBA")
+            providers_logos.append(img)
+        except Exception as e:
+            print(f"Error getting provider logo for {name}: {e}")
+
+    if not providers_logos:
+        providers_logos.append(Image.open(os.path.join(os.path.dirname(__file__), "tmdblogo.png")).convert("RGBA"))
 
     return providers_logos
 
@@ -309,17 +315,6 @@ def process_image(
         # Open overlay images
         bckg = Image.open(os.path.join(os.path.dirname(__file__), "bckg.png"))
         overlay = Image.open(os.path.join(os.path.dirname(__file__), "overlay.png"))
-
-
-        providers_logos = []
-        try:
-            for provider_image_url in provider_images_urls:
-                response = requests.get(provider_image_url, timeout=10)
-                response.raise_for_status()
-                providerlogo = resize_image(Image.open(io.BytesIO(response.content)), 41)
-                providers_logos.append(providerlogo.convert("RGBA"))
-        except Exception:
-            providers_logos = [Image.open(os.path.join(os.path.dirname(__file__), "tmdblogo.png"))]
 
         # Paste images
         bckg.paste(image, (1175, 0))
@@ -530,8 +525,8 @@ for movie in movies:
     else:
         duration = "N/A"
 
-    # Get providers logos
-    provider_images_urls = get_providers_logos('movie', movie['id'])
+    # Get providers logos thanks to JustWatch
+    providers_logos = get_providers_logos('movie', movie['id'])
 
     # Check if backdrop image is available
     backdrop_path = movie["backdrop_path"]
@@ -576,8 +571,8 @@ for tvshow in tvshows:
     tv_details = get_tv_show_details(tvshow["id"])
     seasons = tv_details.get("number_of_seasons", 0)
 
-    # Get providers logos
-    provider_images_urls = get_providers_logos('tv', tvshow['id'])
+    # Get providers logos thanks to JustWatch
+    providers_logos = get_providers_logos('tv', tvshow['id'])
 
     # Check if backdrop image is available
     backdrop_path = tvshow["backdrop_path"]
