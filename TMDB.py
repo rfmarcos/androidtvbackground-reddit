@@ -20,7 +20,7 @@ LANGUAGE_SHORT = os.getenv("LANGUAGE_SHORT") or "en"
 NOW_TRENDING_TEXT =  os.getenv("NOW_TRENDING_TEXT") or "Now trending on" #Check text length to adjust network logo position
 SEASON_TEXT = os.getenv("SEASON_TEXT") or "Season"
 SEASONS_TEXT = os.getenv("SEASONS_TEXT") or "Seasons"
-OVERVIEW_LINES = os.getenv("OVERVIEW_LINES") or "4"
+OVERVIEW_LINES = int(os.getenv("OVERVIEW_LINES", 4))
 
 # Base URL for the API
 TMDB_URL = "https://api.themoviedb.org/3/"
@@ -316,7 +316,7 @@ def process_image(
         metadata_color = "white"
 
         # Wrap overview text
-        wrapped_overview = "\n".join(textwrap.wrap(overview, width=70, max_lines=OVERVIEW_LINES, placeholder=" ..."))
+        wrapped_overview = "\n".join(textwrap.wrap(overview, width=70, max_lines=OVERVIEW_LINES, placeholder="..."))
         line_height = font_overview.getbbox("A")[3]
         overview_height = (wrapped_overview.count("\n") + 1) * line_height
 
