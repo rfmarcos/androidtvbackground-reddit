@@ -350,8 +350,7 @@ def process_image(
         info_position = (210, 650)  # Adjusted position for logo and info
         custom_position = (210, overview_position[1] + overview_height + 30)
 
-        bbox = font_custom.getbbox(provider_text)
-        provider_x_position = bbox[2] - bbox[0] + 10
+        provider_x_position = font_custom.getbbox(provider_text)[2] + 10
         for provider_logo in providers_logos[:3]:
             bckg.paste(provider_logo, (provider_x_position, overview_position[1] + overview_height + 55), provider_logo)
             provider_x_position += provider_logo.width + 10
