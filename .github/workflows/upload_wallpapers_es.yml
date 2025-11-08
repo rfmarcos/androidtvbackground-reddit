@@ -16,6 +16,7 @@ jobs:
       LANGUAGE: es-ES
       LANGUAGE_SHORT: es
       NOW_TRENDING_TEXT: En tendencia en
+      AVAILABLE_ON_TEXT: Disponible en
       SEASON_TEXT: Temporada
       SEASONS_TEXT: Temporadas
     steps:
