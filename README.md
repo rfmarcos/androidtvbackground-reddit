@@ -23,6 +23,9 @@ You can use the existing subreddits:
 New wallpapers are automatically generated and uploaded **every Monday at 09:00 UTC**.
 
 ---
+## 🎬 Streaming Providers
+The project also supports showing available streaming platforms (e.g. Netflix, Prime Video, Apple TV, etc.) for each movie or TV show.
+This data is obtained through TMDB’s “Watch Providers” API, which is powered by JustWatch.
 
 ## 🌍 Multi-language Support
 

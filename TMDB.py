@@ -17,9 +17,11 @@ TMDB_TOKEN = os.getenv("TMDB_BEARER_TOKEN")
 # Language properties
 LANGUAGE = os.getenv("LANGUAGE") or "en-US"
 LANGUAGE_SHORT = os.getenv("LANGUAGE_SHORT") or "en"
-NOW_TRENDING_TEXT =  os.getenv("NOW_TRENDING_TEXT") or "Now trending on" #Check text length to adjust network logo position
+NOW_TRENDING_TEXT =  os.getenv("NOW_TRENDING_TEXT") or "Now trending on"
+AVAILABLE_ON_TEXT =  os.getenv("AVAILABLE_ON_TEXT") or "Available on"
 SEASON_TEXT = os.getenv("SEASON_TEXT") or "Season"
 SEASONS_TEXT = os.getenv("SEASONS_TEXT") or "Seasons"
+OVERVIEW_LINES = int(os.getenv("OVERVIEW_LINES", 4))
 
 # Base URL for the API
 TMDB_URL = "https://api.themoviedb.org/3/"
@@ -269,6 +271,39 @@ def get_multilogo(media_type, media_id, original_language):
 def similarity(a, b):
     return difflib.SequenceMatcher(None, a.lower(), b.lower()).ratio()
 
+def get_providers_logos(media_type, media_id):
+    providers_url = f"{TMDB_URL}{media_type}/{media_id}/watch/providers"
+    providers_response = requests.get(providers_url, headers=TMDB_HEADERS)
+    providers = (
+            providers_response.json()
+            .get("results", {})
+            .get(LANGUAGE_SHORT.upper(), {})
+            .get("flatrate", [])
+        )
+    
+    providers.sort(key=lambda provider: provider.get("display_priority", 999))
+
+    providers_logos = []
+
+    for provider in providers:
+        name = provider.get("provider_name")
+        logo_file = name.lower().replace(' ', '') + '.png'
+        try:
+            img_path = os.path.join(os.path.dirname(__file__), f"resources/providers/{logo_file}")
+            img = Image.open(img_path).convert("RGBA")
+            providers_logos.append(img)
+        except Exception as e:
+            print(f"Error getting provider logo for {name}: {e}")
+
+    if providers_logos:
+        provider_text = AVAILABLE_ON_TEXT
+    else:
+        providers_logos.append(Image.open(os.path.join(os.path.dirname(__file__), "resources/providers/tmdblogo.png")).convert("RGBA"))
+        provider_text = NOW_TRENDING_TEXT
+
+    return providers_logos, provider_text
+
+
 def process_image(
     image_url, title, is_movie, genre, year, rating, duration=None, seasons=None
 ):
@@ -285,21 +320,9 @@ def process_image(
         bckg = Image.open(os.path.join(os.path.dirname(__file__), "bckg.png"))
         overlay = Image.open(os.path.join(os.path.dirname(__file__), "overlay.png"))
 
-        try:
-            if network_image_url and network_image_url.startswith("http"):
-                response = requests.get(network_image_url, timeout=10)
-                response.raise_for_status()
-                networklogo = resize_image(Image.open(io.BytesIO(response.content)), 41)
-                networklogo = networklogo.convert("RGBA")
-            else:
-                networklogo = Image.open(os.path.join(os.path.dirname(__file__), "tmdblogo.png"))
-        except Exception:
-            networklogo = Image.open(os.path.join(os.path.dirname(__file__), "tmdblogo.png"))
-
         # Paste images
         bckg.paste(image, (1175, 0))
         bckg.paste(overlay, (1175, 0), overlay)
-        bckg.paste(networklogo, (680, 890), networklogo)
 
         # Add title text with shadow
         draw = ImageDraw.Draw(bckg)
@@ -315,15 +338,23 @@ def process_image(
         overview_color = (150, 150, 150)  # Grey color for the summary
         metadata_color = "white"
 
+        # Wrap overview text
+        wrapped_overview = "\n".join(textwrap.wrap(overview, width=70, max_lines=OVERVIEW_LINES, placeholder="..."))
+        line_height = font_overview.getbbox("A")[3]
+        overview_height = (wrapped_overview.count("\n") + 1) * line_height
+
         # Text position
         title_position = (200, 420)
         overview_position = (210, 730)
         shadow_offset = 2
         info_position = (210, 650)  # Adjusted position for logo and info
-        custom_position = (210, 870)
+        custom_position = (210, overview_position[1] + overview_height + 30)
 
-        # Wrap overview text
-        wrapped_overview = "\n".join(textwrap.wrap(overview, width=70, max_lines=2, placeholder=" ..."))
+        bbox = font_custom.getbbox(provider_text)
+        provider_x_position = 210 + bbox[2] - bbox[0] + 20
+        for provider_logo in providers_logos[:3]:
+            bckg.paste(provider_logo, (provider_x_position, overview_position[1] + overview_height + 55), provider_logo)
+            provider_x_position += provider_logo.width + 30
 
         # Draw Overview for info
         draw.text((overview_position[0] + shadow_offset, overview_position[1] + shadow_offset), wrapped_overview, font=font_overview, fill=shadow_color)
@@ -391,11 +422,11 @@ def process_image(
         # Draw custom text
         draw.text(
             (custom_position[0] + shadow_offset, custom_position[1] + shadow_offset),
-            NOW_TRENDING_TEXT,
+            provider_text,
             font=font_custom,
             fill=shadow_color,
         )
-        draw.text(custom_position, NOW_TRENDING_TEXT, font=font_custom, fill=metadata_color)
+        draw.text(custom_position, provider_text, font=font_custom, fill=metadata_color)
 
         # Save the resized image
         filename = os.path.join(background_dir, f"{clean_filename(title)}.jpg")
@@ -432,6 +463,7 @@ def should_exclude_movie(
         or any(keyword in movie_keywords for keyword in EXCLUDED_KEYWORDS)
         or (release_date and release_date < MAX_AIR_DATE)
     ):
+        print(f"Excluding movie: {movie["title"]}")
         return True
     return False
 
@@ -461,6 +493,7 @@ def should_exclude_tvshow(
         or any(keyword in tv_keywords for keyword in EXCLUDED_KEYWORDS)
         or (last_air_date and last_air_date < MAX_AIR_DATE)
     ):
+        print(f"Excluding tvshow: {tvshow["name"]}")
         return True
     return False
 
@@ -496,6 +529,9 @@ for movie in movies:
         duration = f"{hours}h {minutes}min"
     else:
         duration = "N/A"
+
+    # Get providers logos thanks to JustWatch
+    providers_logos, provider_text = get_providers_logos('movie', movie['id'])
 
     # Check if backdrop image is available
     backdrop_path = movie["backdrop_path"]
@@ -540,16 +576,8 @@ for tvshow in tvshows:
     tv_details = get_tv_show_details(tvshow["id"])
     seasons = tv_details.get("number_of_seasons", 0)
 
-    # Get network logo URL or fallback
-    # TODO query watchmode API, for better results, should also work with movies
-    network_image_url = None
-    networks = tv_details.get("networks", [])
-    for network in networks:
-        name = network.get("name")
-        logo_path = network.get("logo_path")
-        if name in ALLOWED_NETWORKS and logo_path:
-            network_image_url = f"https://image.tmdb.org/t/p/original{logo_path}"
-            break
+    # Get providers logos thanks to JustWatch
+    providers_logos, provider_text = get_providers_logos('tv', tvshow['id'])
 
     # Check if backdrop image is available
     backdrop_path = tvshow["backdrop_path"]
