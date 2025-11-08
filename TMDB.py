@@ -17,7 +17,8 @@ TMDB_TOKEN = os.getenv("TMDB_BEARER_TOKEN")
 # Language properties
 LANGUAGE = os.getenv("LANGUAGE") or "en-US"
 LANGUAGE_SHORT = os.getenv("LANGUAGE_SHORT") or "en"
-NOW_TRENDING_TEXT =  os.getenv("NOW_TRENDING_TEXT") or "Now trending on" #Check text length to adjust network logo position
+NOW_TRENDING_TEXT =  os.getenv("NOW_TRENDING_TEXT") or "Now trending on"
+AVAILABLE_ON_TEXT =  os.getenv("AVAILABLE_ON_TEXT") or "Available on"
 SEASON_TEXT = os.getenv("SEASON_TEXT") or "Season"
 SEASONS_TEXT = os.getenv("SEASONS_TEXT") or "Seasons"
 OVERVIEW_LINES = int(os.getenv("OVERVIEW_LINES", 4))
@@ -294,10 +295,13 @@ def get_providers_logos(media_type, media_id):
         except Exception as e:
             print(f"Error getting provider logo for {name}: {e}")
 
-    if not providers_logos:
+    if providers_logos:
+        provider_text = AVAILABLE_ON_TEXT
+    else:
         providers_logos.append(Image.open(os.path.join(os.path.dirname(__file__), "resources/providers/tmdblogo.png")).convert("RGBA"))
+        provider_text = NOW_TRENDING_TEXT
 
-    return providers_logos
+    return providers_logos, provider_text
 
 
 def process_image(
@@ -346,7 +350,7 @@ def process_image(
         info_position = (210, 650)  # Adjusted position for logo and info
         custom_position = (210, overview_position[1] + overview_height + 30)
 
-        provider_x_position = 680
+        provider_x_position = draw.textlength(provider_text, font=font_custom) + 10
         for provider_logo in providers_logos[:3]:
             bckg.paste(provider_logo, (provider_x_position, overview_position[1] + overview_height + 55), provider_logo)
             provider_x_position += provider_logo.width + 10
@@ -417,11 +421,11 @@ def process_image(
         # Draw custom text
         draw.text(
             (custom_position[0] + shadow_offset, custom_position[1] + shadow_offset),
-            NOW_TRENDING_TEXT,
+            provider_text,
             font=font_custom,
             fill=shadow_color,
         )
-        draw.text(custom_position, NOW_TRENDING_TEXT, font=font_custom, fill=metadata_color)
+        draw.text(custom_position, provider_text, font=font_custom, fill=metadata_color)
 
         # Save the resized image
         filename = os.path.join(background_dir, f"{clean_filename(title)}.jpg")
@@ -526,7 +530,7 @@ for movie in movies:
         duration = "N/A"
 
     # Get providers logos thanks to JustWatch
-    providers_logos = get_providers_logos('movie', movie['id'])
+    providers_logos, provider_text = get_providers_logos('movie', movie['id'])
 
     # Check if backdrop image is available
     backdrop_path = movie["backdrop_path"]
@@ -572,7 +576,7 @@ for tvshow in tvshows:
     seasons = tv_details.get("number_of_seasons", 0)
 
     # Get providers logos thanks to JustWatch
-    providers_logos = get_providers_logos('tv', tvshow['id'])
+    providers_logos, provider_text = get_providers_logos('tv', tvshow['id'])
 
     # Check if backdrop image is available
     backdrop_path = tvshow["backdrop_path"]
