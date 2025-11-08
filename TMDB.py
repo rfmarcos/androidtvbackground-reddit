@@ -348,7 +348,7 @@ def process_image(
 
         provider_x_position = 680
         for provider_logo in providers_logos[:3]:
-            bckg.paste(provider_logo, (provider_x_position, overview_position[1] + overview_height + 50), provider_logo)
+            bckg.paste(provider_logo, (provider_x_position, overview_position[1] + overview_height + 55), provider_logo)
             provider_x_position += provider_logo.width + 10
 
         # Draw Overview for info
