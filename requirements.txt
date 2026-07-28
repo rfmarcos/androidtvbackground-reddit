@@ -1,4 +1,4 @@
-Pillow==10.3.0
-Requests==2.31.0
+Pillow>=10.3.0
+Requests>=2.31.0
 praw>=8.0.0
-python-dotenv==1.2.1
+python-dotenv>=1.2.1
