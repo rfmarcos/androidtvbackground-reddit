@@ -7,11 +7,10 @@ on:
 jobs:
   generate-and-upload-wallpapers:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       TMDB_BEARER_TOKEN: ${{ secrets.TMDB_BEARER_TOKEN }}
-      CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
-      CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
-      REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
       SUBREDDIT: AndroidTVWallpapersES
       LANGUAGE: es-ES
       LANGUAGE_SHORT: es
@@ -21,10 +20,7 @@ jobs:
       SEASONS_TEXT: Temporadas
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0 
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -39,6 +35,10 @@ jobs:
         run: |
           python -u TMDB.py
 
-      - name: Upload Wallpapers to Subreddit
+      - name: Commit and Push generated files
         run: |
-          python -u upload_wallpaper.py
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add tmdb_backgrounds/ wallpapers.json
+          git commit -m "Auto-update: New TMDB wallpapers and wallpapers.json" || echo "No changes to commit"
+          git push

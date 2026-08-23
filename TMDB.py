@@ -1,3 +1,4 @@
+import json
 import requests
 from PIL import Image, ImageDraw, ImageFont, ImageFilter, ImageEnhance
 from io import BytesIO
@@ -598,3 +599,28 @@ for tvshow in tvshows:
     else:
         # Print error message if no backdrop image found
         print(f"No backdrop image found for {title}")
+
+
+print("\n[DEBUG] Generating manifest JSON for Devvit...")
+
+github_user = "rfmarcos" 
+github_repo = "androidtvbackground-reddit"
+branch = "main"
+
+wallpapers_data = []
+
+for filename in os.listdir(background_dir):
+    if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
+        title = os.path.splitext(filename)[0].replace('_', ' ')
+        raw_url = f"https://raw.githubusercontent.com/{github_user}/{github_repo}/{branch}/{background_dir}/{filename}"
+        
+        wallpapers_data.append({
+            "title": f"Wallpaper: {title}",
+            "url": raw_url
+        })
+
+json_path = "wallpapers.json"
+with open(json_path, "w", encoding="utf-8") as json_file:
+    json.dump(wallpapers_data, json_file, indent=4)
+
+print(f"[DEBUG] File {json_path} generated correctly with {len(wallpapers_data)} images.")
