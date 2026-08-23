@@ -619,7 +619,7 @@ for filename in os.listdir(background_dir):
             "url": raw_url
         })
 
-json_path = "wallpapers.json"
+json_path = f"wallpapers_{LANGUAGE_SHORT}.json"
 with open(json_path, "w", encoding="utf-8") as json_file:
     json.dump(wallpapers_data, json_file, indent=4)
 
