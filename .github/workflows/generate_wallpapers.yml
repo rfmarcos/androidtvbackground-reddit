@@ -8,12 +8,10 @@ on:
 jobs:
   generate-wallpapers:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       TMDB_BEARER_TOKEN: ${{ secrets.TMDB_BEARER_TOKEN }}
-      CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
-      CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
-      REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
-      SUBREDDIT: AndroidTVWallpapersES
       LANGUAGE: es-ES
       LANGUAGE_SHORT: es
       NOW_TRENDING_TEXT: En tendencia en
@@ -35,14 +33,10 @@ jobs:
       - name: Run TMDB script
         run: python -u TMDB.py
 
-      - name: Set date variable
-        id: date
-        run: echo "DATE=$(date +'%Y-%m-%d_%H-%M-%S')" >> $GITHUB_ENV
-
-      - name: Upload images as artifact
-        if: success()
-        uses: actions/upload-artifact@v4
-        with:
-          name: tmdb-wallpapers-${{ env.DATE }}
-          path: tmdb_backgrounds/
-          if-no-files-found: warn
+      - name: Commit and Push generated files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add "tmdb_backgrounds/${LANGUAGE_SHORT}/" "wallpapers_${LANGUAGE_SHORT}.json"
+          git commit -m "Auto-update: New TMDB wallpapers and wallpapers_${LANGUAGE_SHORT}.json" || echo "No changes to commit"
+          git push

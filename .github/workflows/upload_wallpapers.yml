@@ -1,24 +1,25 @@
-name: EN - Generate and Upload Wallpapers to Subreddit
+name: EN - Generate Wallpapers and Commit
 
 on:
   schedule:
     - cron: '0 9 * * 1'  # Every Mondat at 9:00 UTC
   workflow_dispatch:
 jobs:
-  generate-and-upload-wallpapers:
+  generate-wallpapers:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       TMDB_BEARER_TOKEN: ${{ secrets.TMDB_BEARER_TOKEN }}
-      CLIENT_ID: ${{ secrets.REDDIT_CLIENT_ID }}
-      CLIENT_SECRET: ${{ secrets.REDDIT_CLIENT_SECRET }}
-      REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
-      SUBREDDIT: AndroidTVWallpapers
+      LANGUAGE: en-US
+      LANGUAGE_SHORT: en
+      NOW_TRENDING_TEXT: Now trending on
+      AVAILABLE_ON_TEXT: Available on
+      SEASON_TEXT: Season
+      SEASONS_TEXT: Seasons
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0 
+        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -33,6 +34,10 @@ jobs:
         run: |
           python -u TMDB.py
 
-      - name: Upload Wallpapers to Subreddit
+      - name: Commit and Push generated files
         run: |
-          python -u upload_wallpaper.py
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add "tmdb_backgrounds/${LANGUAGE_SHORT}/" "wallpapers_${LANGUAGE_SHORT}.json"
+          git commit -m "Auto-update: New TMDB wallpapers and wallpapers_${LANGUAGE_SHORT}.json" || echo "No changes to commit"
+          git push

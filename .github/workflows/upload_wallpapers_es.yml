@@ -39,6 +39,6 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git add tmdb_backgrounds/ wallpapers_es.json
-          git commit -m "Auto-update: New TMDB wallpapers and wallpapers_es.json" || echo "No changes to commit"
+          git add "tmdb_backgrounds/${LANGUAGE_SHORT}/" "wallpapers_${LANGUAGE_SHORT}.json"
+          git commit -m "Auto-update: New TMDB wallpapers and wallpapers_${LANGUAGE_SHORT}.json" || echo "No changes to commit"
           git push

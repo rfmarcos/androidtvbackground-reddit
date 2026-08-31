@@ -146,8 +146,10 @@ def get_tv_keywords(tv_id):
     return []
 
 
-# Create a directory to save the backgrounds and clear its contents if it exists
-background_dir = "tmdb_backgrounds"
+# Create a language-specific directory to save the backgrounds and clear its contents if it exists
+base_background_dir = "tmdb_backgrounds"
+background_dir = os.path.join(base_background_dir, LANGUAGE_SHORT)
+os.makedirs(base_background_dir, exist_ok=True)
 if os.path.exists(background_dir):
     for file in os.listdir(background_dir):
         file_path = os.path.join(background_dir, file)
@@ -609,11 +611,12 @@ branch = "main"
 
 wallpapers_data = []
 
+relative_background_dir = os.path.join("tmdb_backgrounds", LANGUAGE_SHORT)
 for filename in os.listdir(background_dir):
     if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
         title = os.path.splitext(filename)[0].replace('_', ' ')
-        raw_url = f"https://raw.githubusercontent.com/{github_user}/{github_repo}/{branch}/{background_dir}/{filename}"
-        
+        raw_url = f"https://raw.githubusercontent.com/{github_user}/{github_repo}/{branch}/{relative_background_dir}/{filename}"
+
         wallpapers_data.append({
             "title": f"Wallpaper: {title}",
             "url": raw_url
