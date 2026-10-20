@@ -2,15 +2,15 @@ import json
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
 from io import BytesIO
 import os
 from dotenv import load_dotenv
 import shutil
-import textwrap
 from datetime import datetime, timedelta
 from functools import lru_cache
 import difflib
+import math
 
 load_dotenv()
 
@@ -100,24 +100,12 @@ MAX_AIR_DATE = (
     datetime.now() - timedelta(days=365)
 )  # specify the number of days since the movie release or the tv show last air date, shows before this date will be excluded
 
-# Save font locally
-truetype_url = (
-    "https://github.com/googlefonts/roboto/raw/main/src/hinted/Roboto-Light.ttf"
-)
-truetype_path = "Roboto-Light.ttf"
-if not os.path.exists(truetype_path):
-    try:
-        response = requests.get(truetype_url, timeout=10)
-        if response.status_code == 200:
-            with open(truetype_path, "wb") as f:
-                f.write(response.content)
-            print("Roboto-Light font saved")
-        else:
-            print(
-                f"Failed to download Roboto-Light font. Status code: {response.status_code}"
-            )
-    except Exception as e:
-        print(f"An error occurred while downloading the Roboto-Light font: {e}")
+# Fonts bundled in resources/fonts (Roboto, Apache 2.0)
+FONTS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources", "fonts")
+
+
+def font(weight, size):
+    return ImageFont.truetype(os.path.join(FONTS_DIR, f"Roboto-{weight}.ttf"), size=size)
 
 movies_max = 20  # specify the maximum number of movies to fetch
 tvshows_max = 20  # specify the maximum number of TV shows to fetch
@@ -189,38 +177,25 @@ if os.path.exists(background_dir):
 os.makedirs(background_dir, exist_ok=True)
 
 
-# truncate
-def truncate(overview, max_chars):
-    if len(overview) > max_chars:
-        return overview[: max_chars - 3]
-    else:
-        return overview
+def cover_resize(image, width, height):
+    # Scale the image to fill width x height and crop the overflow (centered)
+    scale = max(width / image.width, height / image.height)
+    resized = image.resize(
+        (max(width, round(image.width * scale)), max(height, round(image.height * scale))),
+        Image.LANCZOS,
+    )
+    left = (resized.width - width) // 2
+    top = (resized.height - height) // 2
+    return resized.crop((left, top, left + width, top + height))
 
 
-# resize image
-def resize_image(image, height):
-    ratio = height / image.height
-    width = int(image.width * ratio)
-    return image.resize((width, height))
-
-
-def resize_logo(image, width, height):
-    # Get the aspect ratio of the image
-    aspect_ratio = image.width / image.height
-
-    # Calculate new width and height to maintain aspect ratio
-    new_width = width
-    new_height = int(new_width / aspect_ratio)
-
-    # If the calculated height is greater than the desired height,
-    # recalculate the width to fit the desired height
-    if new_height > height:
-        new_height = height
-        new_width = int(new_height * aspect_ratio)
-
-    # Resize the image
-    resized_img = image.resize((new_width, new_height))
-    return resized_img
+def fit_resize(image, max_width, max_height):
+    # Scale the image to fit inside max_width x max_height keeping its aspect ratio
+    scale = min(max_width / image.width, max_height / image.height)
+    return image.resize(
+        (max(1, round(image.width * scale)), max(1, round(image.height * scale))),
+        Image.LANCZOS,
+    )
 
 
 def clean_filename(filename):
@@ -294,6 +269,71 @@ def similarity(a, b):
     return difflib.SequenceMatcher(None, a.lower(), b.lower()).ratio()
 
 
+# Wallpaper layout (4K canvas). The info block sits top-left, leaving the lower
+# half free for the launcher rows (e.g. Projectivy Launcher).
+CANVAS_SIZE = (3840, 2160)
+MARGIN_LEFT = 210
+CONTENT_WIDTH = 1550
+LOGO_MAX_SIZE = (1350, 420)
+LOGO_BOTTOM = 640
+META_CENTER = 725
+PROVIDER_LOGO_HEIGHT = 88
+JPEG_QUALITY = int(os.getenv("JPEG_QUALITY", 90))
+
+RESOURCES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "resources")
+
+# TMDB returns some TV-only genres untranslated
+TV_GENRE_TRANSLATIONS = {
+    "es": {
+        "Action & Adventure": "Acción y aventura",
+        "Sci-Fi & Fantasy": "Ciencia ficción y fantasía",
+        "War & Politics": "Bélica y política",
+        "Kids": "Infantil",
+        "Soap": "Telenovela",
+        "Talk": "Entrevistas",
+    },
+    "pt": {
+        "Action & Adventure": "Ação e aventura",
+        "Sci-Fi & Fantasy": "Ficção científica e fantasia",
+        "War & Politics": "Guerra e política",
+        "Kids": "Infantil",
+        "Soap": "Novela",
+        "Talk": "Entrevistas",
+    },
+}
+
+
+def genre_names(genre_ids, genres_map, translations=None, limit=2):
+    names = [genres_map.get(genre_id) for genre_id in genre_ids]
+    names = [(translations or {}).get(name, name) for name in names if name]
+    return ", ".join(names[:limit])
+
+
+def get_textless_backdrop(media_type, media):
+    # Prefer a backdrop without baked-in text, so it doesn't clash with the logo
+    textless_paths = [
+        backdrop["file_path"]
+        for backdrop in tmdb_get(
+            f"{media_type}/{media['id']}/images?include_image_language=null"
+        ).get("backdrops", [])
+        if backdrop.get("iso_639_1") is None and backdrop.get("width", 0) >= 1920
+    ]
+    if media.get("backdrop_path") in textless_paths or not textless_paths:
+        return media.get("backdrop_path")
+    return textless_paths[0]
+
+
+@lru_cache(maxsize=None)
+def get_provider_logo(logo_path):
+    try:
+        response = session.get(f"https://image.tmdb.org/t/p/w154{logo_path}", timeout=REQUEST_TIMEOUT)
+        response.raise_for_status()
+        return Image.open(BytesIO(response.content)).convert("RGBA")
+    except Exception as e:
+        print(f"Error getting provider logo {logo_path}: {e}")
+        return None
+
+
 def get_providers_logos(media_type, media_id):
     providers = (
         tmdb_get(f"{media_type}/{media_id}/watch/providers")
@@ -301,32 +341,155 @@ def get_providers_logos(media_type, media_id):
         .get(REGION, {})
         .get("flatrate", [])
     )
-
     providers.sort(key=lambda provider: provider.get("display_priority", 999))
 
     providers_logos = []
-
+    seen = set()
     for provider in providers:
-        name = provider.get("provider_name")
-        logo_file = name.lower().replace(' ', '') + '.png'
-        try:
-            img_path = os.path.join(os.path.dirname(__file__), f"resources/providers/{logo_file}")
-            img = Image.open(img_path).convert("RGBA")
-            providers_logos.append(img)
-        except Exception as e:
-            print(f"Error getting provider logo for {name}: {e}")
+        logo_path = provider.get("logo_path")
+        # Skip variants sharing the same logo (e.g. "Netflix Standard with Ads")
+        if not logo_path or logo_path in seen:
+            continue
+        seen.add(logo_path)
+        logo = get_provider_logo(logo_path)
+        if logo:
+            providers_logos.append(logo)
 
     if providers_logos:
-        provider_text = AVAILABLE_ON_TEXT
-    else:
-        providers_logos.append(Image.open(os.path.join(os.path.dirname(__file__), "resources/providers/tmdblogo.png")).convert("RGBA"))
-        provider_text = NOW_TRENDING_TEXT
+        return providers_logos, AVAILABLE_ON_TEXT
+    return [], NOW_TRENDING_TEXT
 
-    return providers_logos, provider_text
+
+def smoothstep(t):
+    t = min(1.0, max(0.0, t))
+    return t * t * (3 - 2 * t)
+
+
+def gradient_mask(size, horizontal, fn):
+    # Build a full-size L mask from fn(t), t in [0, 1] along one axis
+    strip = Image.new("L", (256, 1) if horizontal else (1, 256))
+    strip.putdata([round(255 * fn(i / 255)) for i in range(256)])
+    return strip.resize(size, Image.BILINEAR)
+
+
+@lru_cache(maxsize=1)
+def overlay_mask():
+    # Dark on the left (text), at the bottom (launcher rows) and a bit on top (clock)
+    left = gradient_mask(CANVAS_SIZE, True, lambda t: 0.96 * (1 - smoothstep((t - 0.28) / 0.45)))
+    bottom = gradient_mask(CANVAS_SIZE, False, lambda t: 0.98 * smoothstep((t - 0.42) / 0.46))
+    top = gradient_mask(CANVAS_SIZE, False, lambda t: 0.45 * (1 - smoothstep(t / 0.22)))
+    visible = ImageChops.multiply(ImageChops.invert(left), ImageChops.invert(bottom))
+    return ImageChops.invert(ImageChops.multiply(visible, ImageChops.invert(top)))
+
+
+@lru_cache(maxsize=1)
+def dither_noise():
+    # Subtle noise to prevent banding in the dark gradients
+    noise = Image.effect_noise(CANVAS_SIZE, 3)
+    return Image.merge("RGB", (noise, noise, noise))
+
+
+def rounded(image, radius):
+    mask = Image.new("L", image.size, 0)
+    ImageDraw.Draw(mask).rounded_rectangle((0, 0, image.width - 1, image.height - 1), radius, fill=255)
+    result = image.copy()
+    result.putalpha(ImageChops.multiply(result.getchannel("A"), mask))
+    return result
+
+
+def wrap_text(text, fnt, max_width, max_lines):
+    lines, current = [], ""
+    for word in text.split():
+        candidate = f"{current} {word}".strip()
+        if fnt.getlength(candidate) <= max_width or not current:
+            current = candidate
+        else:
+            lines.append(current)
+            current = word
+    if current:
+        lines.append(current)
+    if len(lines) > max_lines:
+        lines = lines[:max_lines]
+        last = lines[-1]
+        while " " in last and fnt.getlength(last + "…") > max_width:
+            last = last.rsplit(" ", 1)[0]
+        lines[-1] = last.rstrip(",.;:") + "…"
+    return lines
+
+
+def star_points(cx, cy, outer, inner):
+    points = []
+    for i in range(10):
+        radius = outer if i % 2 == 0 else inner
+        angle = -math.pi / 2 + i * math.pi / 5
+        points.append((cx + radius * math.cos(angle), cy + radius * math.sin(angle)))
+    return points
+
+
+def draw_title(draw, title):
+    # Fallback when there is no logo: biggest size that fits in two lines
+    for size in range(170, 89, -10):
+        title_font = font("Bold", size)
+        lines = wrap_text(title, title_font, CONTENT_WIDTH, 99)
+        if len(lines) <= 2 and all(title_font.getlength(line) <= CONTENT_WIDTH for line in lines):
+            break
+    lines = wrap_text(title, title_font, CONTENT_WIDTH, 2)
+    line_height = round(size * 1.08)
+    y = LOGO_BOTTOM - line_height * len(lines)
+    for line in lines:
+        draw.text((MARGIN_LEFT - 6, y), line, font=title_font, fill="white")
+        y += line_height
+
+
+def draw_metadata(draw, rating, details):
+    x = MARGIN_LEFT
+    if rating:
+        # Rating pill: star + score
+        rating_font = font("Medium", 46)
+        rating_text = f"{rating:.1f}"
+        pad, star, gap, height = 24, 22, 14, 72
+        width = pad + star * 2 + gap + round(rating_font.getlength(rating_text)) + pad
+        top = META_CENTER - height // 2
+        draw.rounded_rectangle((x, top, x + width, top + height), height // 2, fill=(255, 255, 255, 46))
+        draw.polygon(star_points(x + pad + star, META_CENTER, star, star * 0.45), fill=(245, 197, 24, 255))
+        draw.text((x + pad + star * 2 + gap, META_CENTER), rating_text, font=rating_font, fill="white", anchor="lm")
+        x += width + 34
+    meta_text = "   ·   ".join(part for part in details if part)
+    draw.text((x, META_CENTER), meta_text, font=font("Medium", 48), fill=(230, 230, 230, 255), anchor="lm")
+
+
+def draw_overview(draw, overview):
+    overview_font = font("Regular", 48)
+    line_height = 66
+    y = META_CENTER + 36 + 52
+    for line in wrap_text(overview, overview_font, CONTENT_WIDTH, OVERVIEW_LINES):
+        draw.text((MARGIN_LEFT, y), line, font=overview_font, fill=(220, 220, 220, 255))
+        y += line_height
+    return y
+
+
+def draw_providers(layer, draw, top, providers_logos, provider_text):
+    center = top + PROVIDER_LOGO_HEIGHT // 2
+    label_font = font("Light", 50)
+    draw.text((MARGIN_LEFT, center), provider_text, font=label_font, fill=(205, 205, 205, 255), anchor="lm")
+    x = MARGIN_LEFT + round(label_font.getlength(provider_text)) + 32
+
+    if providers_logos:
+        logos = [
+            rounded(fit_resize(logo, PROVIDER_LOGO_HEIGHT, PROVIDER_LOGO_HEIGHT), 20)
+            for logo in providers_logos[:4]
+        ]
+    else:
+        tmdb_logo = Image.open(os.path.join(RESOURCES_DIR, "providers", "tmdblogo.png")).convert("RGBA")
+        logos = [fit_resize(tmdb_logo, 400, 46)]
+
+    for logo in logos:
+        layer.alpha_composite(logo, (x, center - logo.height // 2))
+        x += logo.width + 22
 
 
 def process_image(
-    image_url,
+    backdrop_path,
     media,
     media_type,
     title,
@@ -336,134 +499,57 @@ def process_image(
     rating,
     providers_logos,
     provider_text,
-    duration=None,
-    seasons=None,
+    extra_info,
 ):
-    is_movie = media_type == "movie"
     # Download the background image
     try:
-        response = session.get(image_url, timeout=REQUEST_TIMEOUT)
+        response = session.get(f"{TMDB_IMAGE_URL}{backdrop_path}", timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
+        backdrop = Image.open(BytesIO(response.content)).convert("RGB")
     except Exception as e:
         print(f"Failed to download background for {title}: {e}")
         return
 
-    # Open the image
-    image = Image.open(BytesIO(response.content))
+    # Full-bleed backdrop darkened with a gradient tinted by the image's own colour
+    backdrop = cover_resize(backdrop, *CANVAS_SIZE)
+    average = backdrop.resize((1, 1), Image.BOX).getpixel((0, 0))
+    tint = tuple(round(6 + channel * 0.1) for channel in average)
+    canvas = Image.composite(Image.new("RGB", CANVAS_SIZE, tint), backdrop, overlay_mask())
+    canvas = ImageChops.add(canvas, dither_noise(), 1.0, -128).convert("RGBA")
 
-    # Resize the image to have a height of 1500 pixels while preserving aspect ratio
-    image = resize_image(image, 1500)
+    # Everything in the info block is drawn on its own layer to cast a soft shadow
+    layer = Image.new("RGBA", CANVAS_SIZE, (0, 0, 0, 0))
+    draw = ImageDraw.Draw(layer)
 
-    # Open overlay images
-    bckg = Image.open(os.path.join(os.path.dirname(__file__), "bckg.png"))
-    overlay = Image.open(os.path.join(os.path.dirname(__file__), "overlay.png"))
-
-    # Paste images
-    bckg.paste(image, (1175, 0))
-    bckg.paste(overlay, (1175, 0), overlay)
-
-    # Add title text with shadow
-    draw = ImageDraw.Draw(bckg)
-
-    # Text font
-    font_title = ImageFont.truetype(truetype_path, size=190)
-    font_overview = ImageFont.truetype(truetype_path, size=50)
-    font_custom = ImageFont.truetype(truetype_path, size=60)
-
-    # Text color
-    shadow_color = "black"
-    main_color = "white"
-    overview_color = (150, 150, 150)  # Grey color for the summary
-    metadata_color = "white"
-
-    # Wrap overview text
-    wrapped_overview = "\n".join(textwrap.wrap(overview, width=70, max_lines=OVERVIEW_LINES, placeholder="..."))
-    line_height = font_overview.getbbox("A")[3]
-    overview_height = (wrapped_overview.count("\n") + 1) * line_height
-
-    # Text position
-    title_position = (200, 420)
-    overview_position = (210, 730)
-    shadow_offset = 2
-    info_position = (210, 650)  # Adjusted position for logo and info
-    custom_position = (210, overview_position[1] + overview_height + 30)
-
-    bbox = font_custom.getbbox(provider_text)
-    provider_x_position = 210 + bbox[2] - bbox[0] + 20
-    for provider_logo in providers_logos[:3]:
-        bckg.paste(provider_logo, (provider_x_position, overview_position[1] + overview_height + 55), provider_logo)
-        provider_x_position += provider_logo.width + 30
-
-    # Draw Overview for info
-    draw.text((overview_position[0] + shadow_offset, overview_position[1] + shadow_offset), wrapped_overview, font=font_overview, fill=shadow_color)
-    draw.text(overview_position, wrapped_overview, font=font_overview, fill=metadata_color)
-
-    # Determine genre text and additional info
-    if is_movie:
-        additional_info = f"{duration}"
-    else:
-        additional_info = f"{seasons} {SEASON_TEXT if seasons == 1 else SEASONS_TEXT}"
-
-    rating_text = "TMDB: " + str(rating)
-    year_text = truncate(str(year), 7)
-    info_text = f"{genre}  •  {year_text}  •  {additional_info}  •  {rating_text}"
-
-    # Draw metadata
-    draw.text(
-        (info_position[0] + shadow_offset, info_position[1] + shadow_offset),
-        info_text,
-        font=font_overview,
-        fill=shadow_color,
-    )
-    draw.text(info_position, info_text, font=font_overview, fill=overview_color)
-
-    # Get logo image URL
+    logo_drawn = False
     logo_path = get_logo_fallback(media_type, media)
-
-    logo_drawn = False  # Flag to track if logo is drawn
-
     if logo_path:
         try:
             logo_response = session.get(f"{TMDB_IMAGE_URL}{logo_path}", timeout=REQUEST_TIMEOUT)
             logo_response.raise_for_status()
-            logo_image = Image.open(BytesIO(logo_response.content))
-            # Resize the logo image to fit within a box while maintaining aspect ratio
-            logo_image = resize_logo(logo_image, 1000, 500)
-            logo_position = (
-                210,
-                info_position[1] - logo_image.height - 25,
-            )  # Position for logo
-            logo_image = logo_image.convert("RGBA")
-
-            # Paste the logo onto the image
-            bckg.paste(logo_image, logo_position, logo_image)
-            logo_drawn = True  # Logo was successfully drawn
+            logo_image = fit_resize(Image.open(BytesIO(logo_response.content)).convert("RGBA"), *LOGO_MAX_SIZE)
+            layer.alpha_composite(logo_image, (MARGIN_LEFT, LOGO_BOTTOM - logo_image.height))
+            logo_drawn = True
         except Exception as e:
             print(f"Failed to draw logo for {title}: {e}")
-
     if not logo_drawn:
-        # Draw title text if logo is not available or failed to draw
-        draw.text(
-            (title_position[0] + shadow_offset, title_position[1] + shadow_offset),
-            title,
-            font=font_title,
-            fill=shadow_color,
-        )
-        draw.text(title_position, title, font=font_title, fill=main_color)
+        draw_title(draw, title)
 
-    # Draw custom text
-    draw.text(
-        (custom_position[0] + shadow_offset, custom_position[1] + shadow_offset),
-        provider_text,
-        font=font_custom,
-        fill=shadow_color,
-    )
-    draw.text(custom_position, provider_text, font=font_custom, fill=metadata_color)
+    draw_metadata(draw, rating, [str(year)[:4], extra_info, genre])
+    overview_bottom = draw_overview(draw, overview)
+    draw_providers(layer, draw, overview_bottom + 40, providers_logos, provider_text)
 
-    # Save the resized image
+    shadow_alpha = layer.getchannel("A").filter(ImageFilter.GaussianBlur(14)).point(lambda a: a * 0.6)
+    shadow = Image.new("RGBA", CANVAS_SIZE, (0, 0, 0, 0))
+    shadow.putalpha(shadow_alpha)
+    canvas.alpha_composite(shadow)
+    canvas.alpha_composite(layer)
+
+    # Save the wallpaper
     filename = unique_path(background_dir, clean_filename(title), ".jpg")
-    bckg = bckg.convert("RGB")
-    bckg.save(filename)
+    canvas.convert("RGB").save(
+        filename, "JPEG", quality=JPEG_QUALITY, subsampling=0, optimize=True, progressive=True
+    )
     print(f"Image saved: {filename}")
 
 
@@ -580,20 +666,15 @@ for movie in movies:
     # Extract movie details
     title = movie["title"]
     rating = round(movie["vote_average"], 1)
-    genre = ", ".join(movie_genres.get(genre_id, "") for genre_id in movie.get("genre_ids", []))
+    genre = genre_names(movie.get("genre_ids", []), movie_genres)
     print(f"Processing movie: {title} {rating}")
 
-    # Fetch additional movie details
+    # Fetch additional movie details and format duration as hours and minutes
     duration = get_movie_details(movie["id"]).get("runtime") or 0
-
-    # Format duration as hours and minutes
-    if duration:
-        duration = f"{duration // 60}h {duration % 60}min"
-    else:
-        duration = "N/A"
+    duration = f"{duration // 60}h {duration % 60}min" if duration else ""
 
     # Check if backdrop image is available
-    backdrop_path = movie.get("backdrop_path")
+    backdrop_path = get_textless_backdrop("movie", movie)
     if not backdrop_path:
         print(f"No backdrop image found for {title}")
         continue
@@ -602,7 +683,7 @@ for movie in movies:
     providers_logos, provider_text = get_providers_logos("movie", movie["id"])
 
     process_image(
-        f"{TMDB_IMAGE_URL}{backdrop_path}",
+        backdrop_path,
         movie,
         "movie",
         title,
@@ -612,7 +693,7 @@ for movie in movies:
         rating=rating,
         providers_logos=providers_logos,
         provider_text=provider_text,
-        duration=duration,
+        extra_info=duration,
     )
 
 
@@ -624,14 +705,17 @@ for tvshow in tvshows:
     # Extract TV show details
     title = tvshow["name"][:58]
     rating = round(tvshow["vote_average"], 1)
-    genre = ", ".join(tv_genres.get(genre_id, "") for genre_id in tvshow.get("genre_ids", []))
+    genre = genre_names(
+        tvshow.get("genre_ids", []), tv_genres, TV_GENRE_TRANSLATIONS.get(LANGUAGE_CODE)
+    )
     print(f"Processing TV show: {title} {rating}")
 
     # Fetch additional TV show details
     seasons = get_tv_show_details(tvshow["id"]).get("number_of_seasons", 0)
+    seasons_text = f"{seasons} {SEASON_TEXT if seasons == 1 else SEASONS_TEXT}" if seasons else ""
 
     # Check if backdrop image is available
-    backdrop_path = tvshow.get("backdrop_path")
+    backdrop_path = get_textless_backdrop("tv", tvshow)
     if not backdrop_path:
         print(f"No backdrop image found for {title}")
         continue
@@ -640,7 +724,7 @@ for tvshow in tvshows:
     providers_logos, provider_text = get_providers_logos("tv", tvshow["id"])
 
     process_image(
-        f"{TMDB_IMAGE_URL}{backdrop_path}",
+        backdrop_path,
         tvshow,
         "tv",
         title,
@@ -650,7 +734,7 @@ for tvshow in tvshows:
         rating=rating,
         providers_logos=providers_logos,
         provider_text=provider_text,
-        seasons=seasons,
+        extra_info=seasons_text,
     )
 
 
