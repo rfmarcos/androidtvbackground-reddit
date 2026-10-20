@@ -1,22 +1,59 @@
-name: EN - Generate Wallpapers and Commit
+name: Generate Wallpapers and Commit
 
 on:
   schedule:
-    - cron: '0 9 * * 1'  # Every Mondat at 9:00 UTC
+    - cron: '0 9 * * 1'  # Every Monday at 9:00 UTC
   workflow_dispatch:
+
+# Never run two generations at the same time (they all push to main)
+concurrency:
+  group: wallpapers-main
+  cancel-in-progress: false
+
 jobs:
   generate-wallpapers:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+    strategy:
+      fail-fast: false
+      max-parallel: 1  # Languages run one after another to avoid push conflicts
+      matrix:
+        include:
+          - name: EN
+            LANGUAGE: en-US
+            LANGUAGE_SHORT: en
+            REGION: US
+            NOW_TRENDING_TEXT: Now trending on
+            AVAILABLE_ON_TEXT: Available on
+            SEASON_TEXT: Season
+            SEASONS_TEXT: Seasons
+          - name: ES
+            LANGUAGE: es-ES
+            LANGUAGE_SHORT: es
+            REGION: ES
+            NOW_TRENDING_TEXT: En tendencia en
+            AVAILABLE_ON_TEXT: Disponible en
+            SEASON_TEXT: Temporada
+            SEASONS_TEXT: Temporadas
+          - name: BR
+            LANGUAGE: pt-BR
+            LANGUAGE_SHORT: br
+            REGION: BR
+            NOW_TRENDING_TEXT: Em alta em
+            AVAILABLE_ON_TEXT: Disponível em
+            SEASON_TEXT: Temporada
+            SEASONS_TEXT: Temporadas
+    name: ${{ matrix.name }} - Generate Wallpapers
     env:
       TMDB_BEARER_TOKEN: ${{ secrets.TMDB_BEARER_TOKEN }}
-      LANGUAGE: en-US
-      LANGUAGE_SHORT: en
-      NOW_TRENDING_TEXT: Now trending on
-      AVAILABLE_ON_TEXT: Available on
-      SEASON_TEXT: Season
-      SEASONS_TEXT: Seasons
+      LANGUAGE: ${{ matrix.LANGUAGE }}
+      LANGUAGE_SHORT: ${{ matrix.LANGUAGE_SHORT }}
+      REGION: ${{ matrix.REGION }}
+      NOW_TRENDING_TEXT: ${{ matrix.NOW_TRENDING_TEXT }}
+      AVAILABLE_ON_TEXT: ${{ matrix.AVAILABLE_ON_TEXT }}
+      SEASON_TEXT: ${{ matrix.SEASON_TEXT }}
+      SEASONS_TEXT: ${{ matrix.SEASONS_TEXT }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -25,19 +62,27 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: 3.12
+          cache: pip
 
       - name: Install Dependencies
-        run: |
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
 
       - name: Run TMDB Wallpaper Generation Script
-        run: |
-          python -u TMDB.py
+        run: python -u TMDB.py
 
       - name: Commit and Push generated files
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add "tmdb_backgrounds/${LANGUAGE_SHORT}/" "wallpapers_${LANGUAGE_SHORT}.json"
-          git commit -m "Auto-update: New TMDB wallpapers and wallpapers_${LANGUAGE_SHORT}.json" || echo "No changes to commit"
-          git push
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "Auto-update: New TMDB wallpapers and wallpapers_${LANGUAGE_SHORT}.json"
+          for attempt in 1 2 3; do
+            git pull --rebase origin "${GITHUB_REF_NAME}" && git push && exit 0
+            echo "Push failed (attempt $attempt), retrying..."
+            sleep 10
+          done
+          exit 1
