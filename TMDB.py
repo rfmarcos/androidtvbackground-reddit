@@ -2,7 +2,7 @@ import json
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
-from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFilter, ImageFont, ImageOps, ImageStat
 from io import BytesIO
 import os
 from dotenv import load_dotenv
@@ -344,13 +344,21 @@ def get_providers_logos(media_type, media_id):
     providers.sort(key=lambda provider: provider.get("display_priority", 999))
 
     providers_logos = []
-    seen = set()
+    seen_logos = set()
+    seen_names = []
     for provider in providers:
         logo_path = provider.get("logo_path")
-        # Skip variants sharing the same logo (e.g. "Netflix Standard with Ads")
-        if not logo_path or logo_path in seen:
+        name = provider.get("provider_name", "").lower()
+        # Skip variants of a service already shown
+        # (e.g. "Netflix Standard with Ads", "Apple TV Amazon Channel")
+        if (
+            not logo_path
+            or logo_path in seen_logos
+            or any(name.startswith(seen) or seen.startswith(name) for seen in seen_names if seen and name)
+        ):
             continue
-        seen.add(logo_path)
+        seen_logos.add(logo_path)
+        seen_names.append(name)
         logo = get_provider_logo(logo_path)
         if logo:
             providers_logos.append(logo)
@@ -395,6 +403,28 @@ def rounded(image, radius):
     result = image.copy()
     result.putalpha(ImageChops.multiply(result.getchannel("A"), mask))
     return result
+
+
+def trim_transparent(image):
+    # Remove transparent padding so the logo fills its box
+    bbox = image.getchannel("A").point(lambda a: 255 if a > 10 else 0).getbbox()
+    return image.crop(bbox) if bbox else image
+
+
+def brighten_dark_logo(image):
+    # Dark, colourless logos (e.g. black wordmarks) vanish on the dark gradient:
+    # invert their luminance so black becomes white while keeping the details
+    alpha = image.getchannel("A")
+    mask = alpha.point(lambda a: 255 if a > 128 else 0)
+    if not mask.getbbox():
+        return image
+    hsv = image.convert("RGB").convert("HSV")
+    _, saturation, value = ImageStat.Stat(hsv, mask).mean
+    if value >= 70 or saturation >= 60:
+        return image
+    inverted = ImageOps.invert(image.convert("RGB"))
+    inverted.putalpha(alpha)
+    return inverted
 
 
 def wrap_text(text, fnt, max_width, max_lines):
@@ -527,7 +557,8 @@ def process_image(
         try:
             logo_response = session.get(f"{TMDB_IMAGE_URL}{logo_path}", timeout=REQUEST_TIMEOUT)
             logo_response.raise_for_status()
-            logo_image = fit_resize(Image.open(BytesIO(logo_response.content)).convert("RGBA"), *LOGO_MAX_SIZE)
+            logo_image = Image.open(BytesIO(logo_response.content)).convert("RGBA")
+            logo_image = fit_resize(brighten_dark_logo(trim_transparent(logo_image)), *LOGO_MAX_SIZE)
             layer.alpha_composite(logo_image, (MARGIN_LEFT, LOGO_BOTTOM - logo_image.height))
             logo_drawn = True
         except Exception as e:
