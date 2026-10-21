@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from functools import lru_cache
 import difflib
 import math
+import re
 
 load_dotenv()
 
@@ -334,6 +335,22 @@ def get_provider_logo(logo_path):
         return None
 
 
+PROVIDER_VARIANT_SUFFIX = re.compile(
+    r"\s+(amazon channel|apple tv channel|roku premium channel|channel"
+    r"|standard with ads|basic with ads|with ads|premium|essential|basic|standard)$"
+)
+
+
+def provider_base_name(name):
+    # "Paramount+ Amazon Channel" / "Paramount Plus Essential" -> "paramount plus"
+    base = re.sub(r"\s+", " ", name.lower().replace("+", " plus")).strip()
+    while True:
+        stripped = PROVIDER_VARIANT_SUFFIX.sub("", base)
+        if stripped == base:
+            return base
+        base = stripped
+
+
 def get_providers_logos(media_type, media_id):
     providers = (
         tmdb_get(f"{media_type}/{media_id}/watch/providers")
@@ -348,9 +365,9 @@ def get_providers_logos(media_type, media_id):
     seen_names = []
     for provider in providers:
         logo_path = provider.get("logo_path")
-        name = provider.get("provider_name", "").lower()
+        name = provider_base_name(provider.get("provider_name", ""))
         # Skip variants of a service already shown
-        # (e.g. "Netflix Standard with Ads", "Apple TV Amazon Channel")
+        # (e.g. "Netflix Standard with Ads", "Paramount Plus Essential", "Apple TV Amazon Channel")
         if (
             not logo_path
             or logo_path in seen_logos
